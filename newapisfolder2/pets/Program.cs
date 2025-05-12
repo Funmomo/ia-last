@@ -9,6 +9,11 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add logging configuration
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
+builder.Logging.AddDebug();
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddControllers()
@@ -37,11 +42,11 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidIssuer = "http://localhost:5000",
         ValidAudience = "http://localhost:5000",
-        ValidateLifetime = true,
+        ValidateLifetime = false,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured"))),
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.FromMinutes(5)
     };
 
     options.Events = new JwtBearerEvents
@@ -50,10 +55,15 @@ builder.Services.AddAuthentication(options =>
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
             logger.LogError($"Authentication failed: {context.Exception.Message}");
+            logger.LogError($"Stack trace: {context.Exception.StackTrace}");
+            logger.LogError($"Token: {context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last()}");
+            logger.LogError($"Current UTC time: {DateTime.UtcNow}");
             
             if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
             {
                 context.Response.Headers.Add("Token-Expired", "true");
+                var expiredException = context.Exception as SecurityTokenExpiredException;
+                logger.LogError($"Token expiration: {expiredException?.Expires}");
             }
             return Task.CompletedTask;
         },
@@ -62,14 +72,21 @@ builder.Services.AddAuthentication(options =>
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
             logger.LogInformation("Token validated successfully");
+            logger.LogInformation($"User claims: {string.Join(", ", context.Principal?.Claims.Select(c => $"{c.Type}: {c.Value}"))}");
+            logger.LogInformation($"Token expiration: {context.SecurityToken.ValidTo}");
             return Task.CompletedTask;
         },
         
         OnMessageReceived = context =>
         {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-            logger.LogInformation($"Received token: {token?.Substring(0, Math.Min(token?.Length ?? 0, 10))}...");
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            
+            if (!string.IsNullOrEmpty(accessToken) && 
+                (path.StartsWithSegments("/chatHub") || path.StartsWithSegments("/chatHub/negotiate")))
+            {
+                context.Token = accessToken;
+            }
             return Task.CompletedTask;
         }
     };
@@ -123,19 +140,31 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Add CORS
+// Configure CORS
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(builder =>
+    options.AddPolicy("SignalRPolicy", builder =>
     {
-        builder.AllowAnyOrigin()
-               .AllowAnyHeader()
-               .AllowAnyMethod();
+        builder
+            .WithOrigins(
+                "http://localhost:5173",
+                "https://localhost:5173",
+                "http://localhost:5000",
+                "https://localhost:5001"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
 // Add SignalR
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+    options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+    options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+});
 
 // Configure Kestrel
 builder.WebHost.ConfigureKestrel(serverOptions =>
@@ -160,14 +189,22 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Enable CORS
-app.UseCors();
+// Add request logging middleware
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation($"Request: {context.Request.Method} {context.Request.Path}");
+    logger.LogInformation($"Authorization: {context.Request.Headers["Authorization"].FirstOrDefault() ?? "none"}");
+    await next();
+});
 
 // Configure the HTTP request pipeline with correct order
 app.UseRouting();
 
-app.UseAuthentication(); // Must come after UseRouting
-app.UseAuthorization();  // Must come after UseAuthentication
+app.UseCors("SignalRPolicy");
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseHttpsRedirection();
 
@@ -193,7 +230,7 @@ app.UseStaticFiles();
 
 // Map endpoints
 app.MapControllers();
-app.MapHub<ChatHub>("/chatHub");
+app.MapHub<ChatHub>("/chatHub").RequireCors("SignalRPolicy");
 app.MapHub<PetHub>("/petHub");
 
 app.Run();

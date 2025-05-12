@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import styles from '../Styles/Messaging.module.css';
 import { 
   getConversations, 
@@ -12,7 +11,6 @@ import {
 import { getShelters, getAdopters, getAllUsers } from '../services/userService';
 
 const Messaging = () => {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -206,15 +204,15 @@ const Messaging = () => {
       
       // Add the new conversation to the list
       const conversationData = {
-        conversationId: newConversation.conversationId,
-        otherUser: selectedUser,
-        lastMessage: newConversation.message,
+        id: newConversation.id,
+        participants: newConversation.participants,
+        lastMessage: null,
         unreadCount: 0
       };
       
       setConversations(prev => [conversationData, ...prev]);
       setSelectedConversation(conversationData);
-      setMessages([newConversation.message]);
+      setMessages([]);
       setShowNewChatModal(false);
       setSelectedUser(null);
     } catch (error) {
@@ -229,21 +227,6 @@ const Messaging = () => {
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (date.toDateString() === today.toDateString()) {
-      return 'Today';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString();
-    }
   };
 
   // Function to get initials from a name
@@ -265,13 +248,14 @@ const Messaging = () => {
   };
 
   // Filter conversations based on search term
-  const filteredConversations = conversations.filter(conv => 
-    conv.otherUser.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredConversations = conversations.filter(conv => {
+    const otherParticipant = conv.participant1?.id === userId ? conv.participant2 : conv.participant1;
+    return otherParticipant?.username?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+  });
 
   // Filter available users based on search term
   const filteredUsers = availableUsers.filter(user => 
-    user.username.toLowerCase().includes(userSearchTerm.toLowerCase())
+    user?.username?.toLowerCase().includes(userSearchTerm.toLowerCase()) || false
   );
 
   if (loading) {
@@ -311,16 +295,16 @@ const Messaging = () => {
           ) : (
             filteredConversations.map(conversation => (
               <div 
-                key={conversation.conversationId} 
-                className={`${styles.conversationItem} ${selectedConversation?.conversationId === conversation.conversationId ? styles.active : ''}`}
+                key={conversation.id} 
+                className={`${styles.conversationItem} ${selectedConversation?.id === conversation.id ? styles.active : ''}`}
                 onClick={() => handleSelectConversation(conversation)}
               >
                 <div className={styles.profilePic}>
-                  {getInitials(conversation.otherUser.username)}
+                  {getInitials(conversation.participant2?.username || 'User')}
                 </div>
                 <div className={styles.conversationInfo}>
                   <div className={styles.conversationName}>
-                    {conversation.otherUser.username}
+                    {conversation.participant2?.username || 'User'}
                   </div>
                   <div className={styles.lastMessage}>
                     {conversation.lastMessage?.content}
@@ -347,10 +331,10 @@ const Messaging = () => {
             <>
               <div className={styles.chatHeader}>
                 <div className={styles.profilePic}>
-                  {getInitials(selectedConversation.otherUser.username)}
+                  {getInitials(selectedConversation.participant2?.username || 'User')}
                 </div>
                 <div className={styles.chatName}>
-                  {selectedConversation.otherUser.username}
+                  {selectedConversation.participant2?.username || 'User'}
                 </div>
               </div>
               

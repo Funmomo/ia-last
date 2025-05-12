@@ -6,21 +6,24 @@ using RealtimeAPI.Data;
 using RealtimeAPI.Hubs;
 using RealtimeAPI.Models;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace RealtimeAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/chat")]
     [Authorize]
     public class ChatController : ControllerBase
     {
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<ChatController> _logger;
 
-        public ChatController(IHubContext<ChatHub> hubContext, ApplicationDbContext context)
+        public ChatController(IHubContext<ChatHub> hubContext, ApplicationDbContext context, ILogger<ChatController> logger)
         {
             _hubContext = hubContext;
             _context = context;
+            _logger = logger;
         }
 
         // Get all conversations for the current user
@@ -40,10 +43,9 @@ namespace RealtimeAPI.Controllers
 
             var result = conversations.Select(c => new
             {
-                ConversationId = c.Id,
-                OtherUser = c.Participant1Id == userId
-                    ? new { c.Participant2.Id, c.Participant2.Username, c.Participant2.Email }
-                    : new { c.Participant1.Id, c.Participant1.Username, c.Participant1.Email },
+                Id = c.Id,
+                Participant1 = new { c.Participant1.Id, c.Participant1.Username },
+                Participant2 = new { c.Participant2.Id, c.Participant2.Username },
                 LastMessage = c.Messages.FirstOrDefault() == null ? null : new
                 {
                     c.Messages.First().Content,
@@ -128,42 +130,56 @@ namespace RealtimeAPI.Controllers
         [HttpPost("conversations")]
         public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-            // Check if conversation already exists
-            var existingConversation = await _context.Conversations
-                .FirstOrDefaultAsync(c => 
-                    (c.Participant1Id == userId && c.Participant2Id == request.ReceiverId) ||
-                    (c.Participant1Id == request.ReceiverId && c.Participant2Id == userId));
-
-            if (existingConversation != null)
+            try
             {
-                return Ok(new { ConversationId = existingConversation.Id });
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    return Unauthorized("User not authenticated");
+                }
+
+                // Validate that both users exist
+                var user1 = await _context.Users.FindAsync(currentUserId);
+                var user2 = await _context.Users.FindAsync(request.ParticipantId);
+
+                if (user1 == null || user2 == null)
+                {
+                    return NotFound("One or both users not found");
+                }
+
+                // Check if conversation already exists
+                var existingConversation = await _context.Conversations
+                    .FirstOrDefaultAsync(c => 
+                        (c.Participant1Id == currentUserId && c.Participant2Id == request.ParticipantId) ||
+                        (c.Participant1Id == request.ParticipantId && c.Participant2Id == currentUserId));
+
+                if (existingConversation != null)
+                {
+                    return Ok(existingConversation);
+                }
+
+                // Create new conversation
+                var conversation = new Conversation
+                {
+                    Participant1Id = currentUserId,
+                    Participant2Id = request.ParticipantId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Conversations.Add(conversation);
+                await _context.SaveChangesAsync();
+
+                // Notify participants
+                await _hubContext.Clients.Users(new[] { currentUserId, request.ParticipantId })
+                    .SendAsync("ConversationCreated", conversation);
+
+                return Ok(conversation);
             }
-
-            // Create a new conversation
-            var conversation = new Conversation
+            catch (Exception ex)
             {
-                Participant1Id = userId,
-                Participant2Id = request.ReceiverId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Conversations.Add(conversation);
-            await _context.SaveChangesAsync();
-
-            // Get user information
-            var otherUser = await _context.Users
-                .Where(u => u.Id == request.ReceiverId)
-                .Select(u => new { u.Id, u.Username, u.Email })
-                .FirstOrDefaultAsync();
-
-            return Ok(new { 
-                ConversationId = conversation.Id,
-                OtherUser = otherUser
-            });
+                _logger.LogError(ex, "Error creating conversation");
+                return StatusCode(500, "An error occurred while creating the conversation");
+            }
         }
 
         [HttpPost("messages")]
@@ -276,7 +292,7 @@ namespace RealtimeAPI.Controllers
 
         public class CreateConversationRequest
         {
-            public string ReceiverId { get; set; } = string.Empty;
+            public string ParticipantId { get; set; } = string.Empty;
         }
 
         public class SendMessageRequest

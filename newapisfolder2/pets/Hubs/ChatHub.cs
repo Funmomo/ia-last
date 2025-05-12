@@ -3,91 +3,176 @@ using Microsoft.EntityFrameworkCore;
 using RealtimeAPI.Data;
 using RealtimeAPI.Models;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RealtimeAPI.Hubs
 {
+    [Authorize]
     public class ChatHub : Hub
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<ChatHub> _logger;
 
-        public ChatHub(ApplicationDbContext context)
+        public ChatHub(ApplicationDbContext context, ILogger<ChatHub> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId != null)
+            try
             {
-                var user = await _context.Users.FindAsync(userId);
-                if (user != null)
+                var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                _logger.LogInformation($"User {userId} connecting to ChatHub");
+
+                if (userId != null)
                 {
-                    user.ConnectionId = Context.ConnectionId;
-                    user.Status = "online";
-                    await _context.SaveChangesAsync();
+                    var user = await _context.Users.FindAsync(userId);
+                    if (user != null)
+                    {
+                        user.ConnectionId = Context.ConnectionId;
+                        user.Status = "online";
+                        await _context.SaveChangesAsync();
+                        
+                        await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+                        await Clients.All.SendAsync("UserConnected", new { user.Id, user.Username, user.Status });
+                        
+                        _logger.LogInformation($"User {userId} ({user.Username}) connected successfully");
+                    }
                 }
+                else
+                {
+                    _logger.LogWarning("User ID not found in claims during connection");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in OnConnectedAsync");
+                throw;
             }
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId != null)
+            try
             {
-                var user = await _context.Users.FindAsync(userId);
-                if (user != null)
+                var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                _logger.LogInformation($"User {userId} disconnecting from ChatHub");
+
+                if (userId != null)
                 {
-                    user.ConnectionId = null;
-                    user.Status = "offline";
-                    await _context.SaveChangesAsync();
+                    var user = await _context.Users.FindAsync(userId);
+                    if (user != null)
+                    {
+                        user.ConnectionId = null;
+                        user.Status = "offline";
+                        await _context.SaveChangesAsync();
+                        
+                        await Groups.RemoveFromGroupAsync(Context.ConnectionId, userId);
+                        await Clients.All.SendAsync("UserDisconnected", new { user.Id, user.Username, user.Status });
+                        
+                        _logger.LogInformation($"User {userId} ({user.Username}) disconnected successfully");
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in OnDisconnectedAsync");
+                throw;
             }
             await base.OnDisconnectedAsync(exception);
         }
 
         public async Task SendMessage(int conversationId, string receiverId, string content)
         {
-            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null) return;
-
-            var message = new Message
+            try
             {
-                ConversationId = conversationId,
-                SenderId = userId,
-                ReceiverId = receiverId,
-                Content = content,
-                SentAt = DateTime.UtcNow,
-                IsDelivered = false
-            };
+                var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userId == null)
+                {
+                    _logger.LogWarning("User ID not found in claims while sending message");
+                    throw new HubException("User not authenticated");
+                }
 
-            _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
+                var message = new Message
+                {
+                    ConversationId = conversationId,
+                    SenderId = userId,
+                    ReceiverId = receiverId,
+                    Content = content,
+                    SentAt = DateTime.UtcNow,
+                    IsDelivered = false
+                };
 
-            var receiver = await _context.Users.FindAsync(message.ReceiverId);
-            if (receiver?.ConnectionId != null)
+                _context.Messages.Add(message);
+                await _context.SaveChangesAsync();
+
+                var receiver = await _context.Users.FindAsync(receiverId);
+                if (receiver?.ConnectionId != null)
+                {
+                    await Clients.Client(receiver.ConnectionId).SendAsync("ReceiveMessage", new
+                    {
+                        message.Id,
+                        message.Content,
+                        message.SentAt,
+                        message.IsDelivered,
+                        SenderId = userId,
+                        ReceiverId = receiverId,
+                        ConversationId = conversationId
+                    });
+                }
+                else
+                {
+                    _logger.LogInformation($"Receiver {receiverId} is offline or not found");
+                }
+            }
+            catch (Exception ex)
             {
-                await Clients.Client(receiver.ConnectionId).SendAsync("ReceiveMessage", message);
+                _logger.LogError(ex, "Error in SendMessage");
+                throw new HubException("Failed to send message", ex);
             }
         }
 
         public async Task MarkMessageAsDelivered(int messageId)
         {
-            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null) return;
-
-            var message = await _context.Messages.FindAsync(messageId);
-            if (message == null || message.ReceiverId != userId) return;
-
-            message.IsDelivered = true;
-            message.DeliveredAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-
-            var sender = await _context.Users.FindAsync(message.SenderId);
-            if (sender?.ConnectionId != null)
+            try
             {
-                await Clients.Client(sender.ConnectionId).SendAsync("MessageDelivered", messageId);
+                var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userId == null)
+                {
+                    _logger.LogWarning("User ID not found in claims while marking message as delivered");
+                    throw new HubException("User not authenticated");
+                }
+
+                var message = await _context.Messages
+                    .Include(m => m.Sender)
+                    .FirstOrDefaultAsync(m => m.Id == messageId && m.ReceiverId == userId);
+
+                if (message == null)
+                {
+                    _logger.LogWarning($"Message {messageId} not found or user {userId} not authorized");
+                    throw new HubException("Message not found or not authorized");
+                }
+
+                message.IsDelivered = true;
+                message.DeliveredAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                if (message.Sender?.ConnectionId != null)
+                {
+                    await Clients.Client(message.Sender.ConnectionId).SendAsync("MessageDelivered", new
+                    {
+                        MessageId = messageId,
+                        DeliveredAt = message.DeliveredAt
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in MarkMessageAsDelivered");
+                throw new HubException("Failed to mark message as delivered", ex);
             }
         }
     }
