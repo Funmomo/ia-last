@@ -1,0 +1,104 @@
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  margin: 8px;
+  width: 100%;
+  max-width: 600px;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.name {
+  font-size: 20px;
+  color: #333;
+  margin: 0;
+  flex: 1;
+}
+
+.description {
+  color: #666;
+  line-height: 1.4;
+  margin: 0;
+  font-size: 14px;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.detailRow {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.detailItem {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 200px;
+}
+
+.label {
+  font-weight: 600;
+  color: #555;
+  min-width: 65px;
+}
+
+.value {
+  color: #666;
+}
+
+.viewButton {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.viewButton:hover {
+  background-color: #357abd;
+}
+
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .detailRow {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .detailItem {
+    min-width: unset;
+  }
+} 

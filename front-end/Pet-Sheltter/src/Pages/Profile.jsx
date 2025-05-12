@@ -227,7 +227,28 @@ const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Store the updated values in localStorage for persistence
+      const token = localStorage.getItem('token');
+      
+      // Make API call to update profile in the database
+      const response = await fetch(`${API_BASE_URL}/api/Profile/me`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to update profile: ${response.status}`);
+      }
+
+      // Update local storage after successful API call
       localStorage.setItem('username', formData.username);
 
       // Update the profile state
