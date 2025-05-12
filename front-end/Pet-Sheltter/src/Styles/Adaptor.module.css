@@ -200,9 +200,9 @@
 }
 
 .shelterName {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   color: var(--text-color);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   font-weight: 600;
 }
 
@@ -390,4 +390,393 @@
   .sectionTitle {
     font-size: 1.5rem;
   }
+}
+
+/* Pet Details Page */
+.petDetailsPage {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.petDetailsHeader {
+  margin-bottom: 2rem;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background-color: rgba(96, 163, 188, 0.1);
+}
+
+.petMainInfo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.petImageSection {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.petDetailImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.petInfo {
+  padding: 1rem;
+}
+
+.petName {
+  font-size: 2.5rem;
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+}
+
+.petAttributes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.attributeItem {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.attributeLabel {
+  color: var(--text-color);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.attributeValue {
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+.petDescription {
+  margin: 2rem 0;
+}
+
+.petDescription h2 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.petDescription p {
+  line-height: 1.6;
+  color: #666;
+}
+
+.actionButtons {
+  margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.adoptButton {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.adoptButton:hover {
+  background-color: var(--accent-color);
+  transform: translateY(-2px);
+}
+
+/* Adoption Form Page */
+.adoptionPage {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.adoptionHeader {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.adoptionContent {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.petSummary {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #eee;
+}
+
+.petSummary img {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.adoptionMessage {
+  margin: 2rem 0;
+}
+
+.adoptionMessage h2 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.adoptionMessage ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.adoptionMessage li {
+  padding: 0.5rem 0;
+  color: #666;
+}
+
+.adoptionMessage li:before {
+  content: "•";
+  color: var(--primary-color);
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+/* Shelter Details Page */
+.shelterDetailsPage {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.shelterMainInfo {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.shelterName {
+  font-size: 2.5rem;
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+}
+
+.shelterAttributes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.shelterPetsSection {
+  margin: 3rem 0;
+}
+
+.shelterPetsSection h2 {
+  margin-bottom: 2rem;
+  color: var(--text-color);
+}
+
+.suggestedShelters {
+  margin-top: 3rem;
+}
+
+.suggestedShelters h2 {
+  margin-bottom: 2rem;
+  color: var(--text-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .petMainInfo {
+    grid-template-columns: 1fr;
+  }
+
+  .petSummary {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .shelterAttributes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.viewAllButton {
+  background: none;
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.viewAllButton:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* Simplified pet cards for shelter page */
+.shelterPetsSection .petCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.shelterPetsSection .petName {
+  font-size: 1.2rem;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.shelterPetsSection .adoptButton {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
+/* Update the shelter pets grid to be a list */
+.shelterPetsSection .petGrid {
+  display: block;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sectionHeader {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .viewAllButton {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+/* Pet Card Container */
+.petCardContainer {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.petCardContainer:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.petImage {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.petCardContent {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.petName {
+  font-size: 1.25rem;
+  color: var(--text-color);
+  margin: 0;
+  font-weight: 600;
+}
+
+.petBreed {
+  color: #666;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.adoptButton {
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  margin-top: auto;
+}
+
+.adoptButton:hover {
+  background-color: #1976d2;
+}
+
+/* Update shelter pets grid */
+.shelterPetsSection .petGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 1rem;
+}
+
+/* Update empty state in shelter pets section */
+.shelterPetsSection .emptyState {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 } 

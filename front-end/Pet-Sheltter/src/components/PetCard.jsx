@@ -1,50 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../Styles/PetCard.module.css';
 
-const API_BASE_URL = 'https://localhost:5001'; // Using HTTPS
-
 const PetCard = ({ pet }) => {
-  const [shelterData, setShelterData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchShelterData = async () => {
-      if (!pet.shelterId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/Shelter/${pet.shelterId}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch shelter data: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setShelterData(data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching shelter data:', err);
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    fetchShelterData();
-  }, [pet.shelterId]);
-
   const handleViewDetails = () => {
-    navigate(`/pet/${pet.id}`);
+    navigate(`/adopter/pet/${pet.id}`);
   };
 
   return (
@@ -58,62 +20,30 @@ const PetCard = ({ pet }) => {
       </div>
       <div className={styles.content}>
         <h2 className={styles.name}>{pet.name}</h2>
-        <p className={styles.description}>{pet.description}</p>
-        
         <div className={styles.details}>
           <div className={styles.detailItem}>
-            <span className={styles.icon}>
-              <i className="fas fa-paw"></i>
-            </span>
-            <span>Breed: {pet.breed}</span>
+            <span className={styles.label}>Type:</span>
+            <span>{pet.type || 'Unknown'}</span>
           </div>
-          
           <div className={styles.detailItem}>
-            <span className={styles.icon}>
-              <i className="fas fa-birthday-cake"></i>
-            </span>
-            <span>Age: {pet.age} years</span>
+            <span className={styles.label}>Breed:</span>
+            <span>{pet.breed || 'Unknown'}</span>
+          </div>
+          <div className={styles.detailItem}>
+            <span className={styles.label}>Age:</span>
+            <span>{pet.age ? `${pet.age} years` : 'Unknown'}</span>
           </div>
         </div>
         
         <div className={styles.shelterInfo}>
-          <h3 className={styles.shelterTitle}>Shelter Information</h3>
-          {loading ? (
-            <p>Loading shelter information...</p>
-          ) : error ? (
-            <p className={styles.error}>Error loading shelter details: {error}</p>
-          ) : (
-            <div className={styles.shelterDetails}>
-              <div className={styles.detailItem}>
-                <span className={styles.icon}>
-                  <i className="fas fa-home"></i>
-                </span>
-                <span>{shelterData?.name || 'Pet Shelter'}</span>
-              </div>
-              
-              <div className={styles.detailItem}>
-                <span className={styles.icon}>
-                  <i className="fas fa-map-marker-alt"></i>
-                </span>
-                <span>{shelterData?.location || 'Location not available'}</span>
-              </div>
-
-              <div className={styles.detailItem}>
-                <span className={styles.icon}>
-                  <i className="fas fa-phone"></i>
-                </span>
-                <span>{shelterData?.phone || 'Phone not available'}</span>
-              </div>
-
-              <div className={styles.detailItem}>
-                <span className={styles.icon}>
-                  <i className="fas fa-envelope"></i>
-                </span>
-                <span>{shelterData?.email || 'Email not available'}</span>
-              </div>
-            </div>
-          )}
+          <h3 className={styles.shelterName}>
+            {pet.shelter || 'Unknown Shelter'}
+          </h3>
         </div>
+
+        <p className={styles.description}>
+          {pet.description || 'No description available'}
+        </p>
 
         <button className={styles.viewButton} onClick={handleViewDetails}>
           View Details

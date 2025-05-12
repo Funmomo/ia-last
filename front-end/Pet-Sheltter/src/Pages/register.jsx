@@ -11,7 +11,25 @@ const Register = () => {
     password: "",
     role: 2 // Default to Adopter
   });
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Username validation
+    if (formData.username.length < 3) {
+      newErrors.username = "Username must be at least 3 characters long";
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,29 +37,57 @@ const Register = () => {
       ...prev,
       [name]: name === 'role' ? parseInt(value) : value,
     }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const response = await register(formData);
-      // Store the token, authentication status, and user role
+
       localStorage.setItem('token', response.token);
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userRole', formData.role.toString());
 
-      // Redirect based on role
       if (formData.role === 1) {
-        navigate("/staff"); // Staff dashboard
+        navigate("/staff");
       } else if (formData.role === 2) {
-        navigate("/adopter"); // Adopter dashboard
-      } else {
-        setError("Invalid user role");
+        navigate("/adopter");
       }
     } catch (err) {
-      setError(err.message || "Registration failed. Please try again.");
+      console.error('Registration error:', err);
+
+      let errorMessage = 'Registration failed';
+
+      if (err.response?.data?.message) {
+        if (err.response.data.message.includes('User exists')) {
+          errorMessage = 'User already exists with this username or email';
+        } else {
+          errorMessage = err.response.data.message;
+        }
+      }
+
+      const fullError = typeof err === "object"
+        ? JSON.stringify(err, Object.getOwnPropertyNames(err), 2)
+        : String(err);
+
+      // In development, show the full error, in production show the simple message
+      const displayError = process.env.NODE_ENV === 'development'
+        ? fullError
+        : errorMessage;
+
+      setErrors(prev => ({
+        ...prev,
+        general: displayError
+      }));
     }
   };
 
@@ -49,7 +95,12 @@ const Register = () => {
     <div className={styles.container}>
       <h1 className={styles.title}>Create account</h1>
       <div className={styles.card}>
-        {error && <div className={styles.error}>{error}</div>}
+        {errors.general && (
+          <div className={`${styles.error} ${styles.generalError}`}>
+            {errors.general}
+          </div>
+        )}
+
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
             <label htmlFor="username" className={styles.label}>
@@ -59,12 +110,13 @@ const Register = () => {
               type="text"
               id="username"
               name="username"
-              className={styles.input}
+              className={`${styles.input} ${errors.username ? styles.inputError : ''}`}
               placeholder="Choose a username"
               value={formData.username}
               onChange={handleChange}
               required
             />
+            {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
           </div>
 
           <div className={styles.formGroup}>
@@ -75,12 +127,13 @@ const Register = () => {
               type="email"
               id="email"
               name="email"
-              className={styles.input}
+              className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
               placeholder="Your email address"
               value={formData.email}
               onChange={handleChange}
               required
             />
+            {errors.email && <span className={styles.errorMessage}>{errors.email}</span>}
           </div>
 
           <div className={styles.formGroup}>
@@ -117,7 +170,7 @@ const Register = () => {
           </div>
 
           <button type="submit" className={styles.submitButton}>
-            Continue
+            Create Account
           </button>
         </form>
 
