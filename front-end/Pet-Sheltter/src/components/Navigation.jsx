@@ -45,6 +45,9 @@ const Navigation = () => {
             <Link to="/adopter/applications" className={styles.navLink}>
               My Applications
             </Link>
+            <Link to="/messages" className={styles.navLink}>
+              Messages
+            </Link>
           </>
         ) : (
           <>
@@ -56,6 +59,9 @@ const Navigation = () => {
             </Link>
             <Link to="/staff/applications" className={styles.navLink}>
               Applications
+            </Link>
+            <Link to="/messages" className={styles.navLink}>
+              Messages
             </Link>
           </>
         )}

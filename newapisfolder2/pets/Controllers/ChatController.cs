@@ -31,46 +31,29 @@ namespace RealtimeAPI.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
             
-            // Get all unique conversation IDs where the user is either sender or receiver
-            var conversationIds = await _context.Messages
-                .Where(m => m.SenderId == userId || m.ReceiverId == userId)
-                .Select(m => m.ConversationId)
-                .Distinct()
+            var conversations = await _context.Conversations
+                .Include(c => c.Participant1)
+                .Include(c => c.Participant2)
+                .Include(c => c.Messages.OrderByDescending(m => m.SentAt).Take(1))
+                .Where(c => c.Participant1Id == userId || c.Participant2Id == userId)
                 .ToListAsync();
 
-            // For each conversation ID, get the latest message and participants
-            var conversations = new List<object>();
-            foreach (var conversationId in conversationIds)
+            var result = conversations.Select(c => new
             {
-                var latestMessage = await _context.Messages
-                    .Where(m => m.ConversationId == conversationId)
-                    .OrderByDescending(m => m.SentAt)
-                    .FirstOrDefaultAsync();
-
-                if (latestMessage != null)
+                ConversationId = c.Id,
+                OtherUser = c.Participant1Id == userId
+                    ? new { c.Participant2.Id, c.Participant2.Username, c.Participant2.Email }
+                    : new { c.Participant1.Id, c.Participant1.Username, c.Participant1.Email },
+                LastMessage = c.Messages.FirstOrDefault() == null ? null : new
                 {
-                    var otherUserId = latestMessage.SenderId == userId ? latestMessage.ReceiverId : latestMessage.SenderId;
-                    var otherUser = await _context.Users
-                        .Where(u => u.Id == otherUserId)
-                        .Select(u => new { u.Id, u.Username, u.Email })
-                        .FirstOrDefaultAsync();
-
-                    conversations.Add(new
-                    {
-                        ConversationId = conversationId,
-                        OtherUser = otherUser,
-                        LastMessage = new
-                        {
-                            latestMessage.Content,
-                            latestMessage.SentAt,
-                            latestMessage.IsDelivered,
-                            latestMessage.DeliveredAt
-                        }
-                    });
+                    c.Messages.First().Content,
+                    c.Messages.First().SentAt,
+                    c.Messages.First().IsDelivered,
+                    c.Messages.First().DeliveredAt
                 }
-            }
+            });
 
-            return Ok(conversations);
+            return Ok(result);
         }
 
         [HttpGet("conversations/{conversationId}/messages")]
@@ -81,11 +64,11 @@ namespace RealtimeAPI.Controllers
                 return Unauthorized();
             
             // Check if user is part of this conversation
-            var isUserInConversation = await _context.Messages
-                .AnyAsync(m => m.ConversationId == conversationId && 
-                    (m.SenderId == userId || m.ReceiverId == userId));
+            var conversation = await _context.Conversations
+                .FirstOrDefaultAsync(c => c.Id == conversationId && 
+                    (c.Participant1Id == userId || c.Participant2Id == userId));
 
-            if (!isUserInConversation)
+            if (conversation == null)
                 return NotFound();
 
             var messages = await _context.Messages
@@ -93,6 +76,19 @@ namespace RealtimeAPI.Controllers
                 .Include(m => m.Receiver)
                 .Where(m => m.ConversationId == conversationId)
                 .OrderBy(m => m.SentAt)
+                .Select(m => new
+                {
+                    m.Id,
+                    m.Content,
+                    m.SentAt,
+                    m.IsDelivered,
+                    m.DeliveredAt,
+                    m.ConversationId,
+                    SenderId = m.SenderId,
+                    SenderUsername = m.Sender.Username,
+                    ReceiverId = m.ReceiverId,
+                    ReceiverUsername = m.Receiver.Username
+                })
                 .ToListAsync();
 
             return Ok(messages);
@@ -106,9 +102,16 @@ namespace RealtimeAPI.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
+            var conversation = await _context.Conversations
+                .FirstOrDefaultAsync(c => 
+                    (c.Participant1Id == userId && c.Participant2Id == otherUserId) ||
+                    (c.Participant1Id == otherUserId && c.Participant2Id == userId));
+
+            if (conversation == null)
+                return Ok(new List<object>());
+
             var messages = await _context.Messages
-                .Where(m => (m.SenderId == userId && m.ReceiverId == otherUserId) ||
-                           (m.SenderId == otherUserId && m.ReceiverId == userId))
+                .Where(m => m.ConversationId == conversation.Id)
                 .OrderBy(m => m.SentAt)
                 .Select(m => new
                 {
@@ -129,6 +132,17 @@ namespace RealtimeAPI.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
+            // Check if conversation already exists
+            var existingConversation = await _context.Conversations
+                .FirstOrDefaultAsync(c => 
+                    (c.Participant1Id == userId && c.Participant2Id == request.ReceiverId) ||
+                    (c.Participant1Id == request.ReceiverId && c.Participant2Id == userId));
+
+            if (existingConversation != null)
+            {
+                return Ok(new { ConversationId = existingConversation.Id });
+            }
+
             // Create a new conversation
             var conversation = new Conversation
             {
@@ -140,23 +154,15 @@ namespace RealtimeAPI.Controllers
             _context.Conversations.Add(conversation);
             await _context.SaveChangesAsync();
 
-            // Create the first message in the conversation
-            var message = new Message
-            {
-                SenderId = userId,
-                ReceiverId = request.ReceiverId,
-                Content = "Conversation started",
-                SentAt = DateTime.UtcNow,
-                IsDelivered = false,
-                ConversationId = conversation.Id
-            };
-
-            _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
+            // Get user information
+            var otherUser = await _context.Users
+                .Where(u => u.Id == request.ReceiverId)
+                .Select(u => new { u.Id, u.Username, u.Email })
+                .FirstOrDefaultAsync();
 
             return Ok(new { 
                 ConversationId = conversation.Id,
-                Message = message
+                OtherUser = otherUser
             });
         }
 
@@ -167,24 +173,80 @@ namespace RealtimeAPI.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
-            var message = new Message
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                SenderId = userId,
-                ReceiverId = request.ReceiverId,
-                Content = request.Content,
-                SentAt = DateTime.UtcNow,
-                ConversationId = request.ConversationId,
-                IsDelivered = false
-            };
+                // Check if conversation exists, if not create it
+                var conversation = await _context.Conversations
+                    .FirstOrDefaultAsync(c => c.Id == request.ConversationId);
 
-            _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
+                if (conversation == null)
+                {
+                    // Create new conversation
+                    conversation = new Conversation
+                    {
+                        Participant1Id = userId,
+                        Participant2Id = request.ReceiverId,
+                        CreatedAt = DateTime.UtcNow
+                    };
 
-            // Notify the recipient through SignalR
-            await _hubContext.Clients.User(message.ReceiverId)
-                .SendAsync("ReceiveMessage", message);
+                    _context.Conversations.Add(conversation);
+                    await _context.SaveChangesAsync();
+                    request.ConversationId = conversation.Id;
+                }
+                else
+                {
+                    // Verify user is part of the conversation
+                    if (conversation.Participant1Id != userId && conversation.Participant2Id != userId)
+                    {
+                        return Forbid();
+                    }
+                }
 
-            return Ok(message);
+                var message = new Message
+                {
+                    SenderId = userId,
+                    ReceiverId = request.ReceiverId,
+                    Content = request.Content,
+                    SentAt = DateTime.UtcNow,
+                    ConversationId = conversation.Id,
+                    IsDelivered = false
+                };
+
+                _context.Messages.Add(message);
+                await _context.SaveChangesAsync();
+
+                // Get usernames for the response
+                var sender = await _context.Users.FindAsync(userId);
+                var receiver = await _context.Users.FindAsync(request.ReceiverId);
+
+                var messageResponse = new
+                {
+                    message.Id,
+                    message.Content,
+                    message.SentAt,
+                    message.IsDelivered,
+                    message.DeliveredAt,
+                    message.ConversationId,
+                    SenderId = message.SenderId,
+                    SenderUsername = sender?.Username,
+                    ReceiverId = message.ReceiverId,
+                    ReceiverUsername = receiver?.Username
+                };
+
+                await transaction.CommitAsync();
+
+                // Notify the recipient through SignalR
+                await _hubContext.Clients.User(message.ReceiverId)
+                    .SendAsync("ReceiveMessage", messageResponse);
+
+                return Ok(messageResponse);
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         [HttpPut("messages/{messageId}/delivered")]

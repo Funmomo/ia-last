@@ -7,6 +7,7 @@ import Adaptor from "./Pages/Adaptor";
 import Staff from "./Pages/Staff";
 import Profile from "./Pages/Profile";
 import MyPets from "./Pages/MyPets";
+import Messaging from "./Pages/Messaging";
 import { PrivateRoute, PublicOnlyRoute } from "./components/ProtectedRoute";
 
 export default function App() {
@@ -58,6 +59,16 @@ export default function App() {
           element={
             <PrivateRoute allowedRoles={[2]}>
               <Adaptor />
+            </PrivateRoute>
+          }
+        />
+        
+        {/* Messaging route - accessible to both staff and adopters */}
+        <Route
+          path="/messages"
+          element={
+            <PrivateRoute allowedRoles={[1, 2]}>
+              <Messaging />
             </PrivateRoute>
           }
         />

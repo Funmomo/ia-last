@@ -38,6 +38,17 @@ const Login = () => {
       // Safely handle role
       const userRole = response.role || 2; // Default to Adopter if role is not provided
       localStorage.setItem('userRole', userRole.toString());
+      
+      // Store user data if available
+      if (response.userId) {
+        localStorage.setItem('userId', response.userId);
+      }
+      if (response.username) {
+        localStorage.setItem('username', response.username);
+      }
+      if (response.email) {
+        localStorage.setItem('userEmail', response.email);
+      }
 
       // Redirect based on role
       if (userRole === 1) {

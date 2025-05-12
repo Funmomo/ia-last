@@ -15,6 +15,8 @@ const AdopterNavigation = () => {
       setActiveTab('pets');
     } else if (path === '/adopter') {
       setActiveTab('all');
+    } else if (path === '/messages') {
+      setActiveTab('messages');
     }
   }, [location.pathname]);
 
@@ -38,6 +40,12 @@ const AdopterNavigation = () => {
           className={`${styles.navTab} ${activeTab === 'shelters' ? styles.active : ''}`}
         >
           Shelters
+        </Link>
+        <Link 
+          to="/messages" 
+          className={`${styles.navTab} ${activeTab === 'messages' ? styles.active : ''}`}
+        >
+          Messages
         </Link>
       </div>
     </div>
