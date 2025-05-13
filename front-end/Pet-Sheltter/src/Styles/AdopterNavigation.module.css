@@ -1,0 +1,84 @@
+:root {
+  --primary-color: #60a3bc;
+  --accent-color: #e25151;
+  --text-color: #2c3e50;
+  --background-color: #f5f7fa;
+}
+
+.adopterNav {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 2rem;
+  position: sticky;
+  top: 90px;
+  z-index: 10;
+}
+
+.navTabs {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.25rem;
+  background-color: #f0f2f5;
+  border-radius: 8px;
+}
+
+.navTab {
+  padding: 0.75rem 1.25rem;
+  text-decoration: none;
+  color: var(--text-color);
+  border-radius: 6px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  flex: 1;
+  text-align: center;
+  letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.navTab:hover {
+  background-color: rgba(226, 81, 81, 0.1);
+  color: var(--primary-color);
+}
+
+.navTab.active {
+  background-color: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 8px rgba(226, 81, 81, 0.2);
+}
+
+.navTab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30%;
+  height: 3px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 3px 3px 0 0;
+}
+
+@media (max-width: 768px) {
+  .adopterNav {
+    padding: 0.5rem;
+    margin-bottom: 1.5rem;
+    top: 70px;
+  }
+  
+  .navTabs {
+    gap: 0.25rem;
+  }
+  
+  .navTab {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+} 
