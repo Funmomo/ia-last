@@ -14,12 +14,14 @@ const ManageShelters = () => {
   const [shelters, setShelters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [newShelter, setNewShelter] = useState({
+  const [formData, setFormData] = useState({
     name: '',
     address: '',
     phone: '',
-    email: '',
+    email: ''
   });
+  const [editingShelter, setEditingShelter] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     fetchShelters();
@@ -59,15 +61,15 @@ const ManageShelters = () => {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setNewShelter(prev => ({
-      ...prev,
+    setFormData(prevState => ({
+      ...prevState,
       [name]: value
     }));
   };
 
-  const createShelter = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setError(null);
@@ -77,10 +79,7 @@ const ManageShelters = () => {
       }
 
       await axios.post('https://localhost:5001/api/Shelter', 
-        {
-          ...newShelter,
-          status: ShelterStatus.Pending // Set initial status as Pending
-        },
+        formData,
         {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -89,7 +88,7 @@ const ManageShelters = () => {
         }
       );
 
-      setNewShelter({ name: '', address: '', phone: '', email: '' });
+      setFormData({ name: '', address: '', phone: '', email: '' });
       await fetchShelters();
     } catch (err) {
       console.error('Error creating shelter:', err);
@@ -97,7 +96,8 @@ const ManageShelters = () => {
     }
   };
 
-  const updateShelterStatus = async (shelterId, currentStatus) => {
+  const updateShelter = async (e) => {
+    e.preventDefault();
     try {
       setError(null);
       const token = localStorage.getItem('token');
@@ -105,21 +105,8 @@ const ManageShelters = () => {
         throw new Error('No authentication token found');
       }
 
-      // Determine new status
-      let newStatus;
-      if (currentStatus === ShelterStatus.Pending || currentStatus === ShelterStatus.Inactive) {
-        newStatus = ShelterStatus.Active;
-      } else if (currentStatus === ShelterStatus.Active) {
-        newStatus = ShelterStatus.Inactive;
-      } else {
-        return; // Don't update if status is Suspended
-      }
-
-      // Update shelter status using the dedicated endpoint
-      await axios.put(`https://localhost:5001/api/Shelter/${shelterId}/status`,
-        {
-          status: newStatus
-        },
+      await axios.put(`https://localhost:5001/api/Shelter/${editingShelter.id}`,
+        editingShelter,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -127,11 +114,13 @@ const ManageShelters = () => {
           }
         }
       );
-      
+
+      setShowEditModal(false);
+      setEditingShelter(null);
       await fetchShelters();
     } catch (err) {
-      console.error('Error updating shelter status:', err);
-      setError(err.message || 'Failed to update shelter status');
+      console.error('Error updating shelter:', err);
+      setError(err.message || 'Failed to update shelter');
     }
   };
 
@@ -159,30 +148,9 @@ const ManageShelters = () => {
     }
   };
 
-  // Helper function to get status text
-  const getStatusText = (status) => {
-    switch (status) {
-      case ShelterStatus.Pending:
-        return 'Pending';
-      case ShelterStatus.Active:
-        return 'Active';
-      case ShelterStatus.Suspended:
-        return 'Suspended';
-      case ShelterStatus.Inactive:
-        return 'Inactive';
-      default:
-        return 'Unknown';
-    }
-  };
-
-  // Helper function to get status button text
-  const getStatusButtonText = (status) => {
-    if (status === ShelterStatus.Pending || status === ShelterStatus.Inactive) {
-      return 'Activate';
-    } else if (status === ShelterStatus.Active) {
-      return 'Deactivate';
-    }
-    return 'No Action';
+  const openEditModal = (shelter) => {
+    setEditingShelter({ ...shelter });
+    setShowEditModal(true);
   };
 
   if (loading) {
@@ -210,45 +178,47 @@ const ManageShelters = () => {
         </div>
       )}
 
-      <form onSubmit={createShelter} className={styles['admin-form']}>
-        <div className={styles['form-group']}>
+      <form onSubmit={handleSubmit} className={styles['shelter-form-container']}>
+        <div className={styles['shelter-form-grid']}>
           <input
             type="text"
             name="name"
-            value={newShelter.name}
-            onChange={handleInputChange}
+            value={formData.name}
+            onChange={handleChange}
             placeholder="Shelter Name"
-            required
-            className={styles['admin-input']}
+            className={styles['shelter-input']}
           />
           <input
             type="text"
             name="address"
-            value={newShelter.address}
-            onChange={handleInputChange}
+            value={formData.address}
+            onChange={handleChange}
             placeholder="Address"
-            required
-            className={styles['admin-input']}
+            className={styles['shelter-input']}
           />
           <input
             type="tel"
             name="phone"
-            value={newShelter.phone}
-            onChange={handleInputChange}
+            value={formData.phone}
+            onChange={handleChange}
             placeholder="Phone Number"
-            required
-            className={styles['admin-input']}
+            className={styles['shelter-input']}
           />
           <input
             type="email"
             name="email"
-            value={newShelter.email}
-            onChange={handleInputChange}
+            value={formData.email}
+            onChange={handleChange}
             placeholder="Email"
-            required
-            className={styles['admin-input']}
+            className={styles['shelter-input']}
           />
-          <button type="submit" className={`${styles['admin-btn']} ${styles['admin-btn-primary']}`}>
+        </div>
+        
+        <div className={styles['shelter-form-actions']}>
+          <button type="submit" className={styles['add-shelter-btn']}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
             Add Shelter
           </button>
         </div>
@@ -261,51 +231,123 @@ const ManageShelters = () => {
       )}
 
       {Array.isArray(shelters) && shelters.length > 0 && (
-        <table className={styles['admin-table']}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Address</th>
-              <th>Phone</th>
-              <th>Email</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shelters.map(shelter => (
-              <tr key={shelter.id || shelter.shelterId}>
-                <td>{shelter.name}</td>
-                <td>{shelter.address}</td>
-                <td>{shelter.phone}</td>
-                <td>{shelter.email}</td>
-                <td>
-                  <span className={`${styles['status-badge']} ${styles[`status-${getStatusText(shelter.status).toLowerCase()}`]}`}>
-                    {getStatusText(shelter.status)}
-                  </span>
-                </td>
-                <td>
-                  <div className={styles['action-buttons']}>
-                    {shelter.status !== ShelterStatus.Suspended && (
-                      <button
-                        onClick={() => updateShelterStatus(shelter.id, shelter.status)}
-                        className={`${styles['admin-btn']} ${shelter.status === ShelterStatus.Active ? styles['admin-btn-warning'] : styles['admin-btn-success']}`}
-                      >
-                        {getStatusButtonText(shelter.status)}
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteShelter(shelter.id)}
-                      className={`${styles['admin-btn']} ${styles['admin-btn-danger']}`}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className={styles['shelter-grid']}>
+          {shelters.map(shelter => (
+            <div key={shelter.id || shelter.shelterId} className={styles['shelter-card']}>
+              <div className={styles['card-header']}>
+                <h3 className={styles['card-title']}>{shelter.name}</h3>
+                <span className={`${styles['card-status']} ${styles['status-active']}`}>Active</span>
+              </div>
+              <div className={styles['card-content']}>
+                <p>{shelter.address}</p>
+                <p>Phone: {shelter.phone}</p>
+                <p>Email: {shelter.email}</p>
+              </div>
+              <div className={styles['card-footer']}>
+                <div className={styles['card-stats']}>
+                  <span className={styles['stat-item']}>15 Pets</span>
+                </div>
+                <div className={styles['card-actions']}>
+                  <button
+                    onClick={() => openEditModal(shelter)}
+                    className={`${styles['card-btn']} ${styles['btn-edit']}`}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deleteShelter(shelter.id)}
+                    className={`${styles['card-btn']} ${styles['btn-delete']}`}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showEditModal && (
+        <div className={styles['modal-overlay']}>
+          <div className={styles['modal-content']}>
+            <div className={styles['modal-header']}>
+              <h3 className={styles['modal-title']}>Edit Shelter</h3>
+              <button 
+                className={styles['modal-close']}
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingShelter(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={updateShelter} className={styles['modal-form']}>
+              <div className={styles['form-control']}>
+                <label className={styles['form-label']}>Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={editingShelter.name}
+                  onChange={handleChange}
+                  required
+                  className={styles['form-input']}
+                />
+              </div>
+              <div className={styles['form-control']}>
+                <label className={styles['form-label']}>Address</label>
+                <input
+                  type="text"
+                  name="address"
+                  value={editingShelter.address}
+                  onChange={handleChange}
+                  required
+                  className={styles['form-input']}
+                />
+              </div>
+              <div className={styles['form-control']}>
+                <label className={styles['form-label']}>Phone</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={editingShelter.phone}
+                  onChange={handleChange}
+                  required
+                  className={styles['form-input']}
+                />
+              </div>
+              <div className={styles['form-control']}>
+                <label className={styles['form-label']}>Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editingShelter.email}
+                  onChange={handleChange}
+                  required
+                  className={styles['form-input']}
+                />
+              </div>
+              <div className={styles['modal-footer']}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingShelter(null);
+                  }}
+                  className={`${styles['modal-btn']} ${styles['modal-btn-cancel']}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={`${styles['modal-btn']} ${styles['modal-btn-save']}`}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

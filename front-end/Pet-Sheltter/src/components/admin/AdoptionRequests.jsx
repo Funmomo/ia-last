@@ -29,7 +29,7 @@ const AdoptionRequests = () => {
   };
 
   useEffect(() => {
-    fetchAdoptionRequests();
+    fetchAdoptions();
     
     // Add additional styles to document
     const styleEl = document.createElement('style');
@@ -42,43 +42,65 @@ const AdoptionRequests = () => {
     };
   }, []);
 
-  const fetchAdoptionRequests = async () => {
+  const fetchPetDetails = async (petId, token) => {
+    try {
+      const response = await axios.get(`https://localhost:5001/api/Pet/${petId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data;
+    } catch (err) {
+      console.error(`Error fetching pet details for ID ${petId}:`, err);
+      return null;
+    }
+  };
+
+  const fetchAdoptions = async () => {
     try {
       setLoading(true);
       setError(null);
-      
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }
 
-      const response = await axios.get('https://localhost:5001/api/Adoption', {
-        headers: { 
+      // Fetch adoption requests
+      const adoptionsResponse = await axios.get('https://localhost:5001/api/Adoption', {
+        headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      // Validate response data
-      if (!response.data) {
-        throw new Error('No data received from server');
+      if (!adoptionsResponse.data) {
+        throw new Error('No adoption data received');
       }
 
-      // Ensure we have an array of adoptions
-      const adoptionData = Array.isArray(response.data) ? response.data : [];
-      console.log('Fetched adoptions:', adoptionData);
-      
-      setAdoptions(adoptionData);
+      console.log('Adoption data received:', adoptionsResponse.data);
+
+      // Fetch pet details for each adoption
+      const adoptionsWithDetails = await Promise.all(
+        adoptionsResponse.data.map(async (adoption) => {
+          const petDetails = await fetchPetDetails(adoption.petId, token);
+          return {
+            ...adoption,
+            pet: petDetails
+          };
+        })
+      );
+
+      setAdoptions(adoptionsWithDetails);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching adoptions:', err);
       setError(err.message || 'Failed to fetch adoption requests');
       setLoading(false);
-      setAdoptions([]); // Reset adoptions to empty array on error
     }
   };
 
-  const updateAdoptionStatus = async (requestId, newStatusCode) => {
+  const handleStatusUpdate = async (adoptionId, newStatus) => {
     try {
       setError(null);
       const token = localStorage.getItem('token');
@@ -86,33 +108,18 @@ const AdoptionRequests = () => {
         throw new Error('No authentication token found');
       }
 
-      // Get current adoption details first
-      const currentAdoption = await axios.get(`https://localhost:5001/api/Adoption/${requestId}`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!currentAdoption.data) {
-        throw new Error('Failed to fetch current adoption details');
-      }
-
-      // Update the adoption with new status
-      await axios.put(`https://localhost:5001/api/Adoption/${requestId}`, 
+      await axios.put(`https://localhost:5001/api/Adoption/${adoptionId}/status`,
+        { status: newStatus },
         {
-          ...currentAdoption.data,
-          status: newStatusCode
-        },
-        { 
-          headers: { 
+          headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
       );
-      
-      await fetchAdoptionRequests(); // Refresh the list
+
+      // Refresh the adoptions list
+      await fetchAdoptions();
     } catch (err) {
       console.error('Error updating adoption status:', err);
       setError(err.message || 'Failed to update adoption status');
@@ -138,7 +145,7 @@ const AdoptionRequests = () => {
         }
       });
       
-      await fetchAdoptionRequests(); // Refresh the list
+      await fetchAdoptions();
     } catch (err) {
       console.error('Error deleting adoption request:', err);
       setError(err.message || 'Failed to delete adoption request');
@@ -173,36 +180,71 @@ const AdoptionRequests = () => {
     }
   };
 
-  const getStatusBadgeClass = (statusCode) => {
-    const status = statusMap[statusCode] || 'Unknown';
-    switch (status.toLowerCase()) {
-      case 'pending': return `${styles['status-badge']} ${styles['status-pending']}`;
-      case 'approved': return `${styles['status-badge']} ${styles['status-approved']}`;
-      case 'rejected': return `${styles['status-badge']} ${styles['status-rejected']}`;
-      case 'interview scheduled': return `${styles['status-badge']} ${styles['status-interview']}`;
-      case 'cancelled': return `${styles['status-badge']} ${styles['status-cancelled']}`;
-      default: return styles['status-badge'];
+  const formatDate = (dateString) => {
+    console.log('Formatting date string:', dateString);
+    // Check if dateString is in ISO format
+    if (typeof dateString === 'string' && dateString.includes('T')) {
+      return new Date(dateString).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+    
+    // If it's a timestamp
+    if (typeof dateString === 'number') {
+      return new Date(dateString).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+
+    return 'Date format not recognized';
+  };
+
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 0: return styles['status-pending'];
+      case 1: return styles['status-active'];
+      case 2: return styles['status-suspended'];
+      default: return styles['status-inactive'];
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 0: return 'Pending';
+      case 1: return 'Approved';
+      case 2: return 'Rejected';
+      default: return 'Unknown';
     }
   };
 
   if (loading) {
     return (
       <div className={styles['admin-section']}>
-        <h2 className={styles['admin-section-title']}>Manage Adoption Requests</h2>
-        <div className={styles['loading']}>Loading...</div>
+        <h2 className={styles['admin-section-title']}>Adoption Requests</h2>
+        <div className={styles['loading']}>Loading adoption requests...</div>
       </div>
     );
   }
 
   return (
     <div className={styles['admin-section']}>
-      <h2 className={styles['admin-section-title']}>Manage Adoption Requests</h2>
+      <h2 className={styles['admin-section-title']}>Adoption Requests</h2>
       
       {error && (
         <div className={styles['error-message']}>
           {error}
           <button 
-            onClick={fetchAdoptionRequests}
+            onClick={fetchAdoptions}
             className={`${styles['admin-btn']} ${styles['admin-btn-primary']}`}
           >
             Retry
@@ -220,10 +262,8 @@ const AdoptionRequests = () => {
         <table className={styles['admin-table']}>
           <thead>
             <tr>
-              <th>Request ID</th>
-              <th>Pet Name</th>
-              <th>Adopter</th>
-              <th>Request Date</th>
+              <th>Date</th>
+              <th>Pet Details</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -231,50 +271,33 @@ const AdoptionRequests = () => {
           <tbody>
             {adoptions.map(adoption => (
               <tr key={adoption.id}>
-                <td>#{adoption.id}</td>
-                <td>{adoption.pet?.name || 'Unknown Pet'}</td>
-                <td>{adoption.adopter?.userName || 'Unknown User'}</td>
-                <td>{new Date(adoption.requestDate).toLocaleDateString()}</td>
+                <td>{formatDate(adoption.requestDate)}</td>
+                <td className={styles['details-cell']}>
+                  <div className={styles['details-primary']}>
+                    {adoption.pet ? adoption.pet.name : 'Unknown Pet'}
+                  </div>
+                  <div className={styles['details-secondary']}>
+                    ID: {adoption.petId}
+                  </div>
+                </td>
                 <td>
-                  <span className={getStatusBadgeClass(adoption.status)}>
-                    {statusMap[adoption.status] || 'Unknown'}
+                  <span className={`${styles['status-badge']} ${getStatusBadgeClass(adoption.status)}`}>
+                    {getStatusText(adoption.status)}
                   </span>
                 </td>
                 <td>
                   <div className={styles['action-buttons']}>
-                    {adoption.status === 0 && ( // Pending status code is 0
+                    {adoption.status === 0 && (
                       <>
-                        <button 
-                          className={`${styles['admin-btn']} ${styles['admin-btn-primary']}`}
-                          onClick={() => updateAdoptionStatus(adoption.id, 2)} // 2 is Approved
+                        <button
+                          onClick={() => handleStatusUpdate(adoption.id, 1)}
+                          className={`${styles['admin-btn']} ${styles['admin-btn-success']}`}
                         >
                           Approve
                         </button>
-                        <button 
-                          className={`${styles['admin-btn']} ${styles['admin-btn-secondary']}`}
-                          onClick={() => updateAdoptionStatus(adoption.id, 1)} // 1 is Interview Scheduled
-                        >
-                          Schedule Interview
-                        </button>
-                        <button 
+                        <button
+                          onClick={() => handleStatusUpdate(adoption.id, 2)}
                           className={`${styles['admin-btn']} ${styles['admin-btn-danger']}`}
-                          onClick={() => updateAdoptionStatus(adoption.id, 3)} // 3 is Rejected
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    {adoption.status === 1 && ( // Interview Scheduled
-                      <>
-                        <button 
-                          className={`${styles['admin-btn']} ${styles['admin-btn-primary']}`}
-                          onClick={() => updateAdoptionStatus(adoption.id, 2)} // 2 is Approved
-                        >
-                          Approve
-                        </button>
-                        <button 
-                          className={`${styles['admin-btn']} ${styles['admin-btn-danger']}`}
-                          onClick={() => updateAdoptionStatus(adoption.id, 3)} // 3 is Rejected
                         >
                           Reject
                         </button>

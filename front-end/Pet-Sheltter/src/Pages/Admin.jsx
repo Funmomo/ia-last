@@ -6,9 +6,19 @@ import styles from '../Styles/Admin.module.css';
 // Import admin components
 import ManageUsers from '../components/admin/ManageUsers';
 import ManageShelters from '../components/admin/ManageShelters';
+import PendingShelters from '../components/admin/PendingShelters';
 import ManageCategories from '../components/admin/ManageCategories';
 import AdoptionRequests from '../components/admin/AdoptionRequests';
 import Dashboard from '../components/admin/Dashboard';
+
+const SheltersManagement = () => {
+  return (
+    <>
+      <PendingShelters />
+      <ManageShelters />
+    </>
+  );
+};
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -51,7 +61,7 @@ const Admin = () => {
       }
 
       // First try to get the current user profile from the API
-      const response = await axios.get('https://localhost:5001/api/Account/profile', {
+      const response = await axios.get('https://localhost:5001/api/Profile/me', {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -169,7 +179,7 @@ const Admin = () => {
         <Routes>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<ManageUsers />} />
-          <Route path="shelters" element={<ManageShelters />} />
+          <Route path="shelters" element={<SheltersManagement />} />
           <Route path="categories" element={<ManageCategories />} />
           <Route path="adoptions" element={<AdoptionRequests />} />
         </Routes>
