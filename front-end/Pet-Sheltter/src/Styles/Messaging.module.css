@@ -3,29 +3,46 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f9f9f9;
+  background-color: #f5f7fb;
 }
 
 .messagingHeader {
-  background-color: #60A3BC;
-  color: white;
-  padding: 1rem 2rem;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  align-items: center;
+  padding: 1rem;
+  background-color: white;
+  border-bottom: 1px solid #e1e4e8;
 }
 
 .headerTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  font-family: 'Fredoka', sans-serif;
   margin: 0;
+  font-size: 1.5rem;
+  color: #1a1a1a;
+}
+
+.connectionStatus {
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.connectionStatus.connected {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.connectionStatus.disconnected,
+.connectionStatus.error {
+  background-color: #ffebee;
+  color: #c62828;
 }
 
 .messagingContent {
   display: flex;
-  flex-direction: row;
   flex: 1;
   overflow: hidden;
 }
@@ -33,123 +50,92 @@
 /* Conversation List */
 .conversationsList {
   width: 300px;
+  border-right: 1px solid #e1e4e8;
   background-color: white;
-  border-right: 1px solid #e0e0e0;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
 .conversationsHeader {
   padding: 1rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e1e4e8;
 }
 
 .searchInput {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  outline: none;
-}
-
-.searchInput:focus {
-  border-color: #60A3BC;
+  padding: 0.5rem;
+  border: 1px solid #e1e4e8;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
 }
 
 .conversationItem {
-  padding: 1rem;
-  border-bottom: 1px solid #f0f0f0;
-  cursor: pointer;
-  transition: background-color 0.2s;
   display: flex;
   align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .conversationItem:hover {
-  background-color: #f5f5f5;
+  background-color: #f5f7fb;
 }
 
 .conversationItem.active {
-  background-color: #e6f7ff;
-  border-left: 3px solid #60A3BC;
+  background-color: #e3f2fd;
 }
 
 .profilePic {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #60A3BC;
+  background-color: #1976d2;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  margin-right: 0.75rem;
+  margin-right: 1rem;
 }
 
 .conversationInfo {
   flex: 1;
+  min-width: 0;
 }
 
 .conversationName {
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .lastMessage {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: #666;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 180px;
 }
 
-.conversationTime {
-  font-size: 0.75rem;
-  color: #999;
-}
-
-.unreadBadge {
-  background-color: #F76C6C;
-  color: white;
-  border-radius: 50%;
-  min-width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  margin-left: 8px;
-}
-
-/* Chat Area */
 .chatArea {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #F9F9F9;
+  background-color: white;
 }
 
 .chatHeader {
-  padding: 1rem;
-  background-color: white;
-  border-bottom: 1px solid #e0e0e0;
   display: flex;
   align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #e1e4e8;
 }
 
 .chatName {
-  font-weight: 600;
+  font-weight: 500;
   margin-left: 1rem;
-}
-
-.chatStatus {
-  font-size: 0.8rem;
-  color: #4CAF50;
-  margin-left: 0.5rem;
 }
 
 .messagesList {
@@ -162,87 +148,79 @@
 
 .messageItem {
   max-width: 70%;
-  padding: 0.75rem 1rem;
-  border-radius: 18px;
   margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
   position: relative;
-  word-wrap: break-word;
 }
 
-.sent {
+.messageItem.sent {
   align-self: flex-end;
-  background-color: #60A3BC;
+  background-color: #1976d2;
   color: white;
-  border-bottom-right-radius: 5px;
+  border-bottom-right-radius: 0.25rem;
 }
 
-.received {
+.messageItem.received {
   align-self: flex-start;
-  background-color: white;
-  color: #333;
-  border-bottom-left-radius: 5px;
+  background-color: #f0f2f5;
+  color: #1a1a1a;
+  border-bottom-left-radius: 0.25rem;
+}
+
+.messageItem.failed {
+  opacity: 0.7;
+  background-color: #f44336;
+  color: white;
+}
+
+.messageItem.failed .messageTime {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .messageTime {
-  font-size: 0.7rem;
-  color: #999;
-  text-align: right;
+  font-size: 0.75rem;
   margin-top: 0.25rem;
+  opacity: 0.8;
 }
 
 .messageStatus {
-  font-size: 0.7rem;
-  color: #ccc;
-  margin-top: 2px;
+  font-size: 0.75rem;
 }
 
-.sent .messageTime {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* Message Input Area */
 .messageInputArea {
-  padding: 1rem;
-  background-color: white;
-  border-top: 1px solid #e0e0e0;
   display: flex;
-  align-items: center;
+  padding: 1rem;
+  border-top: 1px solid #e1e4e8;
+  background-color: white;
 }
 
 .messageInput {
   flex: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 24px;
-  outline: none;
-  resize: none;
-  font-family: inherit;
-  height: 20px;
-  max-height: 80px;
-  overflow-y: auto;
-}
-
-.messageInput:focus {
-  border-color: #60A3BC;
+  padding: 0.75rem;
+  border: 1px solid #e1e4e8;
+  border-radius: 1.5rem;
+  margin-right: 0.5rem;
+  font-size: 0.875rem;
 }
 
 .sendButton {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #60A3BC;
+  background-color: #1976d2;
   color: white;
   border: none;
-  margin-left: 0.75rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 1.25rem;
   transition: background-color 0.2s;
 }
 
 .sendButton:hover {
-  background-color: #4a8eb6;
+  background-color: #1565c0;
 }
 
 .sendButton:disabled {
@@ -262,20 +240,26 @@
   padding: 2rem;
 }
 
-.emptyStateIcon {
-  font-size: 5rem;
-  color: #ddd;
-  margin-bottom: 1rem;
-}
-
 .emptyStateTitle {
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 0.5rem;
 }
 
 .emptyStateText {
+  font-size: 0.875rem;
   max-width: 300px;
+  line-height: 1.4;
+}
+
+.unreadBadge {
+  background-color: #1976d2;
+  color: white;
+  border-radius: 1rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  min-width: 20px;
+  text-align: center;
 }
 
 /* Loading State */
@@ -419,6 +403,23 @@
 
 .userItem.selected {
   background-color: #e6f7ff;
+}
+
+/* Retry Button for Failed Messages */
+.retryButton {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  margin-left: 0.5rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.retryButton:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Responsive Styles */

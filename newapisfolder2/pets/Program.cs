@@ -40,9 +40,9 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidIssuer = "http://localhost:5000",
-        ValidAudience = "http://localhost:5000",
-        ValidateLifetime = false,
+        ValidIssuer = "https://localhost:5001",
+        ValidAudience = "https://localhost:5001",
+        ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured"))),
@@ -115,26 +115,27 @@ builder.Services.AddSwaggerGen(c =>
     c.IncludeXmlComments(xmlPath);
 
     // Configure JWT Authentication in Swagger
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    var securityScheme = new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
         Name = "Authorization",
+        Description = "Enter 'Bearer' [space] and your token",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        Reference = new OpenApiReference 
+        {
+            Type = ReferenceType.SecurityScheme,
+            Id = "Bearer"
+        }
+    };
+
+    c.AddSecurityDefinition("Bearer", securityScheme);
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
+            securityScheme,
             Array.Empty<string>()
         }
     });
@@ -143,7 +144,7 @@ builder.Services.AddSwaggerGen(c =>
 // Configure CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("SignalRPolicy", builder =>
+    options.AddDefaultPolicy(builder =>
     {
         builder
             .WithOrigins(
@@ -154,7 +155,8 @@ builder.Services.AddCors(options =>
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials();
+            .AllowCredentials()
+            .WithExposedHeaders("Token-Expired");
     });
 });
 
@@ -186,8 +188,28 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Pet Shelter API v1");
         c.RoutePrefix = "swagger";
+        c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
+        c.DefaultModelsExpandDepth(-1);
+        c.EnableDeepLinking();
+        c.DisplayRequestDuration();
+        c.EnableFilter();
     });
 }
+
+// Add CSP headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add(
+        "Content-Security-Policy",
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data: https:; " +
+        "font-src 'self' data:; " +
+        "connect-src 'self' wss: https:;"
+    );
+    await next();
+});
 
 // Add request logging middleware
 app.Use(async (context, next) =>
@@ -201,7 +223,7 @@ app.Use(async (context, next) =>
 // Configure the HTTP request pipeline with correct order
 app.UseRouting();
 
-app.UseCors("SignalRPolicy");
+app.UseCors();  // Use the default CORS policy
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -5,12 +5,23 @@ import Login from "./Pages/login";
 import Register from "./Pages/register";
 import Adaptor from "./Pages/Adaptor";
 import Staff from "./Pages/Staff";
+import Admin from "./Pages/Admin";
 import Profile from "./Pages/Profile";
 import MyPets from "./Pages/MyPets";
 import Messaging from "./Pages/Messaging";
 import { PrivateRoute, PublicOnlyRoute } from "./components/ProtectedRoute";
 
 export default function App() {
+  const getDefaultRoute = () => {
+    const userRole = parseInt(localStorage.getItem("userRole"));
+    switch (userRole) {
+      case 0: return "/admin";
+      case 1: return "/staff";
+      case 2: return "/adopter";
+      default: return "/";
+    }
+  };
+
   return (
     <Router>
       <Routes>
@@ -19,10 +30,7 @@ export default function App() {
           path="/"
           element={
             localStorage.getItem("token") ? (
-              <Navigate 
-                to={parseInt(localStorage.getItem("userRole")) === 1 ? "/staff" : "/adopter"} 
-                replace 
-              />
+              <Navigate to={getDefaultRoute()} replace />
             ) : (
               <Landing />
             )
@@ -47,6 +55,14 @@ export default function App() {
 
         {/* Protected routes */}
         <Route
+          path="/admin/*"
+          element={
+            <PrivateRoute allowedRoles={[0]}>
+              <Admin />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/staff/*"
           element={
             <PrivateRoute allowedRoles={[1]}>
@@ -63,21 +79,21 @@ export default function App() {
           }
         />
         
-        {/* Messaging route - accessible to both staff and adopters */}
+        {/* Messaging route - accessible to all authenticated users */}
         <Route
           path="/messages"
           element={
-            <PrivateRoute allowedRoles={[1, 2]}>
+            <PrivateRoute allowedRoles={[0, 1, 2]}>
               <Messaging />
             </PrivateRoute>
           }
         />
         
-        {/* User profile route - accessible to both staff and adopters */}
+        {/* User profile route - accessible to all authenticated users */}
         <Route
           path="/profile"
           element={
-            <PrivateRoute allowedRoles={[1, 2]}>
+            <PrivateRoute allowedRoles={[0, 1, 2]}>
               <Profile />
             </PrivateRoute>
           }

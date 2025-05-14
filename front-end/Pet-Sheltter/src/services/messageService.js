@@ -9,401 +9,320 @@ let connectionPromise = null;
 const CONVERSATIONS_STORAGE_KEY = 'pet_shelter_conversations';
 const MESSAGES_STORAGE_KEY_PREFIX = 'pet_shelter_messages_';
 
+// API configuration
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SIGNALR_BASE_URL = import.meta.env.VITE_SIGNALR_URL || 'http://localhost:5000/chatHub';
+
 // Get data from local storage
 const getStoredConversations = () => {
-    try {
-        const stored = localStorage.getItem(CONVERSATIONS_STORAGE_KEY);
-        return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-        console.error('Error retrieving conversations from storage:', error);
-        return [];
-    }
+  try {
+    const stored = localStorage.getItem(CONVERSATIONS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error retrieving conversations from storage:', error);
+    return [];
+  }
 };
 
 // Get messages from local storage
 const getStoredMessages = (conversationId) => {
-    try {
-        const key = `${MESSAGES_STORAGE_KEY_PREFIX}${conversationId}`;
-        const stored = localStorage.getItem(key);
-        return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-        console.error('Error retrieving messages from storage:', error);
-        return [];
-    }
+  try {
+    const key = `${MESSAGES_STORAGE_KEY_PREFIX}${conversationId}`;
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error retrieving messages from storage:', error);
+    return [];
+  }
 };
 
 // Save conversations to local storage
 const saveConversationsToStorage = (conversations) => {
-    try {
-        localStorage.setItem(CONVERSATIONS_STORAGE_KEY, JSON.stringify(conversations));
-    } catch (error) {
-        console.error('Error saving conversations to storage:', error);
-    }
+  try {
+    localStorage.setItem(CONVERSATIONS_STORAGE_KEY, JSON.stringify(conversations));
+  } catch (error) {
+    console.error('Error saving conversations to storage:', error);
+  }
 };
 
 // Save messages to local storage
 const saveMessagesToStorage = (conversationId, messages) => {
-    try {
-        const key = `${MESSAGES_STORAGE_KEY_PREFIX}${conversationId}`;
-        localStorage.setItem(key, JSON.stringify(messages));
-    } catch (error) {
-        console.error('Error saving messages to storage:', error);
-    }
+  try {
+    const key = `${MESSAGES_STORAGE_KEY_PREFIX}${conversationId}`;
+    localStorage.setItem(key, JSON.stringify(messages));
+  } catch (error) {
+    console.error('Error saving messages to storage:', error);
+  }
 };
 
-// Add a message to local storage
+// Add message validation helper
+const isValidMessage = (message) => {
+  return message && 
+         typeof message === 'object' &&
+         message.id &&
+         message.senderId &&
+         message.content &&
+         message.conversationId;
+};
+
+// Update addMessageToStorage to validate messages
 const addMessageToStorage = (message) => {
-    if (!message || !message.conversationId) return;
-
-    const conversationId = message.conversationId;
-    const messages = getStoredMessages(conversationId);
-
-    // Check if message already exists
-    const exists = messages.some(m => m.id === message.id);
-    if (!exists) {
-        messages.push(message);
-        saveMessagesToStorage(conversationId, messages);
-
-        // Also update the last message in conversations
-        updateConversationLastMessage(conversationId, message);
-    }
+  if (!isValidMessage(message)) {
+    console.error('Attempted to store invalid message:', message);
+    return;
+  }
+  
+  const conversationId = message.conversationId;
+  const messages = getStoredMessages(conversationId);
+  
+  // Check if message already exists
+  const exists = messages.some(m => m.id === message.id);
+  if (!exists) {
+    messages.push(message);
+    saveMessagesToStorage(conversationId, messages);
+    
+    // Also update the last message in conversations
+    updateConversationLastMessage(conversationId, message);
+  }
 };
 
 // Update the last message in conversations list
 const updateConversationLastMessage = (conversationId, message) => {
-    const conversations = getStoredConversations();
-    const index = conversations.findIndex(c => c.conversationId === conversationId);
-
-    if (index >= 0) {
-        conversations[index].lastMessage = {
-            content: message.content,
-            sentAt: message.sentAt,
-            isDelivered: message.isDelivered,
-            deliveredAt: message.deliveredAt
-        };
-        saveConversationsToStorage(conversations);
-    }
+  const conversations = getStoredConversations();
+  const index = conversations.findIndex(c => c.conversationId === conversationId);
+  
+  if (index >= 0) {
+    conversations[index].lastMessage = {
+      content: message.content,
+      sentAt: message.sentAt,
+      isDelivered: message.isDelivered,
+      deliveredAt: message.deliveredAt
+    };
+    saveConversationsToStorage(conversations);
+  }
 };
 
 const setupSignalRCallbacks = () => {
-    if (!connection) return;
+  if (!connection) return;
 
-    // Set up event handlers
-    connection.on('ReceiveMessage', (message) => {
-        console.log('Received message:', message);
+  // Set up event handlers
+  connection.on('ReceiveMessage', (message) => {
+    console.log('Received message:', message);
+    
+    if (!isValidMessage(message)) {
+      console.error('Received invalid message:', message);
+      return;
+    }
+    
+    // Store the message in local storage
+    addMessageToStorage(message);
+    
+    // This will be handled by the component
+    if (window.messageReceived) {
+      window.messageReceived(message);
+    }
+  });
 
-        // Store the message in local storage
-        addMessageToStorage(message);
+  connection.on('MessageDelivered', (messageId) => {
+    console.log('Message delivered:', messageId);
+    
+    if (!messageId) {
+      console.error('Received invalid messageId:', messageId);
+      return;
+    }
+    
+    // Update message status in storage
+    updateMessageDeliveryStatus(messageId);
+    
+    // This will be handled by the component
+    if (window.messageDelivered) {
+      window.messageDelivered(messageId);
+    }
+  });
 
-        // This will be handled by the component
-        if (window.messageReceived) {
-            window.messageReceived(message);
-        }
-    });
+  connection.onclose(() => {
+    console.log('SignalR Connection closed');
+    connectionPromise = null;
+  });
 
-    connection.on('MessageDelivered', (messageId) => {
-        console.log('Message delivered:', messageId);
+  connection.onreconnecting((error) => {
+    console.log('SignalR Reconnecting:', error);
+  });
 
-        // Update message status in storage
-        updateMessageDeliveryStatus(messageId);
-
-        // This will be handled by the component
-        if (window.messageDelivered) {
-            window.messageDelivered(messageId);
-        }
-    });
-
-    connection.onclose(() => {
-        console.log('SignalR Connection closed');
-        connectionPromise = null;
-    });
-
-    connection.onreconnecting((error) => {
-        console.log('SignalR Reconnecting:', error);
-    });
-
-    connection.onreconnected((connectionId) => {
-        console.log('SignalR Reconnected:', connectionId);
-    });
+  connection.onreconnected((connectionId) => {
+    console.log('SignalR Reconnected:', connectionId);
+  });
 };
 
 // Initialize SignalR connection
-export const initializeSignalRConnection = async() => {
-    // If there's an existing connection attempt, return it
-    if (connectionPromise) {
-        return connectionPromise;
-    }
-
-    // If there's an existing connection and it's connected, return it
-    if (connection && connection.state === signalR.HubConnectionState.Connected) {
-        return connection;
-    }
-
-    // If there's an existing connection but it's in a bad state, stop it
-    if (connection) {
-        try {
-            await connection.stop();
-        } catch (err) {
-            console.warn('Error stopping existing connection:', err);
-        }
-        connection = null;
-    }
-
-    // Create a new connection promise
-    connectionPromise = new Promise(async(resolve, reject) => {
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('No authentication token found');
-            }
-
-            connection = new signalR.HubConnectionBuilder()
-                .withUrl('https://localhost:5001/chatHub', {
-                    accessTokenFactory: () => token
-                })
-                .withAutomaticReconnect([0, 2000, 5000, 10000, 20000]) // Retry after 0s, 2s, 5s, 10s, 20s
-                .configureLogging(signalR.LogLevel.Information)
-                .build();
-
-            setupSignalRCallbacks();
-
-            await connection.start();
-            console.log('SignalR Connected');
-
-            connectionPromise = null;
-            resolve(connection);
-        } catch (err) {
-            console.error('SignalR Connection Error: ', err);
-            connection = null;
-            connectionPromise = null;
-            reject(err);
-        }
-    });
-
+export const initializeSignalRConnection = async () => {
+  // If there's an existing connection attempt, return it
+  if (connectionPromise) {
     return connectionPromise;
+  }
+
+  // If there's an existing connection and it's connected, return it
+  if (connection?.state === signalR.HubConnectionState.Connected) {
+    return connection;
+  }
+
+  // If there's an existing connection but it's in a bad state, stop it
+  if (connection) {
+    try {
+      await connection.stop();
+    } catch (err) {
+      console.warn('Error stopping existing connection:', err);
+    }
+    connection = null;
+  }
+
+  // Create a new connection promise
+  connectionPromise = new Promise(async (resolve, reject) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Try HTTPS first, then fall back to HTTP
+      const urls = [
+        SIGNALR_BASE_URL.replace('http://', 'https://').replace(':5000', ':5001'),
+        SIGNALR_BASE_URL
+      ];
+
+      let lastError = null;
+      for (const url of urls) {
+        try {
+          connection = new signalR.HubConnectionBuilder()
+            .withUrl(url, {
+              accessTokenFactory: () => token,
+              skipNegotiation: true,
+              transport: signalR.HttpTransportType.WebSockets
+            })
+            .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+          setupSignalRCallbacks();
+          
+          await connection.start();
+          console.log('SignalR Connected to:', url);
+          
+          connectionPromise = null;
+          resolve(connection);
+          return;
+        } catch (err) {
+          console.warn(`Failed to connect to ${url}:`, err);
+          lastError = err;
+          // Continue to try the next URL
+        }
+      }
+
+      // If we get here, all connection attempts failed
+      throw lastError || new Error('Failed to connect to SignalR hub');
+    } catch (err) {
+      console.error('SignalR Connection Error: ', err);
+      connection = null;
+      connectionPromise = null;
+      reject(err);
+    }
+  });
+
+  return connectionPromise;
 };
 
 // Update message delivery status in local storage
 const updateMessageDeliveryStatus = (messageId) => {
-    try {
-        // Look through all conversations
-        const conversations = getStoredConversations();
-
-        for (const conversation of conversations) {
-            const messages = getStoredMessages(conversation.conversationId);
-            const messageIndex = messages.findIndex(m => m.id === messageId);
-
-            if (messageIndex >= 0) {
-                messages[messageIndex].isDelivered = true;
-                messages[messageIndex].deliveredAt = new Date().toISOString();
-                saveMessagesToStorage(conversation.conversationId, messages);
-                break;
-            }
-        }
-    } catch (error) {
-        console.error('Error updating message delivery status:', error);
+  try {
+    // Look through all conversations
+    const conversations = getStoredConversations();
+    
+    for (const conversation of conversations) {
+      const messages = getStoredMessages(conversation.conversationId);
+      const messageIndex = messages.findIndex(m => m.id === messageId);
+      
+      if (messageIndex >= 0) {
+        messages[messageIndex].isDelivered = true;
+        messages[messageIndex].deliveredAt = new Date().toISOString();
+        saveMessagesToStorage(conversation.conversationId, messages);
+        break;
+      }
     }
+  } catch (error) {
+    console.error('Error updating message delivery status:', error);
+  }
 };
 
-// Get all conversations for the current user
-export const getConversations = async() => {
-    try {
-        // First try to get from API
-        const response = await api.get('/chat/conversations');
-        const apiConversations = response.data || [];
-
-        // Store the updated conversations
-        if (apiConversations.length > 0) {
-            saveConversationsToStorage(apiConversations);
-            return apiConversations;
-        }
-
-        // If API returns empty, use local storage
-        return getStoredConversations();
-    } catch (error) {
-        console.error('Error fetching conversations:', error);
-        // Return from local storage as fallback
-        return getStoredConversations();
+// Get conversations for the current user
+export const getConversations = async () => {
+  try {
+    const response = await api.get('/chat/conversations');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    if (error.response?.status === 401) {
+      // Token might be invalid, redirect to login
+      window.location.href = '/login';
     }
+    return [];
+  }
 };
 
 // Get messages for a specific conversation
-export const getMessages = async(conversationId) => {
-    try {
-        // First try to get from API
-        const response = await api.get(`/chat/conversations/${conversationId}/messages`);
-        const apiMessages = response.data || [];
-
-        // Store the updated messages
-        if (apiMessages.length > 0) {
-            saveMessagesToStorage(conversationId, apiMessages);
-            return apiMessages;
-        }
-
-        // If API returns empty, use local storage
-        return getStoredMessages(conversationId);
-    } catch (error) {
-        console.error('Error fetching messages:', error);
-        // Return from local storage as fallback
-        return getStoredMessages(conversationId);
-    }
+export const getMessages = async (conversationId) => {
+  try {
+    const response = await api.get(`/chat/conversations/${conversationId}/messages`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    return [];
+  }
 };
 
 // Get chat history with a specific user
-export const getChatHistory = async(otherUserId) => {
-    try {
-        const response = await api.get(`/chat/history/${otherUserId}`);
-        return response.data || [];
-    } catch (error) {
-        console.error('Error fetching chat history:', error);
-        return [];
-    }
+export const getChatHistory = async (otherUserId) => {
+  try {
+    const response = await api.get(`/chat/history/${otherUserId}`);
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching chat history:', error);
+    return [];
+  }
 };
 
 // Create a new conversation
-export const createConversation = async(participantId) => {
-    try {
-        const response = await api.post('/chat/conversations', { participantId });
-
-        // If successful, store in local storage
-        if (response.data) {
-            const newConversation = response.data;
-            const conversations = getStoredConversations();
-
-            conversations.push(newConversation);
-            saveConversationsToStorage(conversations);
-
-            return newConversation;
-        }
-
-        return response.data;
-    } catch (error) {
-        console.error('Error creating conversation:', error);
-
-        // Create a mock response for testing
-        const mockConversationId = Math.floor(Math.random() * 1000) + 1;
-        const currentUserId = localStorage.getItem('userId') || 'current-user-id';
-        const now = new Date().toISOString();
-
-        const mockResponse = {
-            id: mockConversationId,
-            participants: [
-                { userId: currentUserId, joinedAt: now },
-                { userId: participantId, joinedAt: now }
-            ],
-            createdAt: now,
-            lastMessageAt: now
-        };
-
-        const conversations = getStoredConversations();
-        conversations.push(mockResponse);
-        saveConversationsToStorage(conversations);
-
-        return mockResponse;
-    }
+export const createConversation = async (receiverId) => {
+  try {
+    const response = await api.post('/chat/conversations', { receiverId });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    throw error;
+  }
 };
 
-// Send a message via REST API
-export const sendMessage = async(conversationId, receiverId, content) => {
-    try {
-        // First try to send via SignalR
-        const signalRSuccess = await sendMessageViaSignalR(conversationId, receiverId, content);
-        if (signalRSuccess) {
-            return;
-        }
-
-        // If SignalR fails, fall back to REST API
-        const response = await api.post('/chat/messages', {
-            conversationId,
-            receiverId,
-            content
-        });
-
-        // Store in local storage
-        addMessageToStorage(response.data);
-
-        return response.data;
-    } catch (error) {
-        console.error('Error sending message:', error);
-
-        // Create a mock message for testing
-        const mockMessage = {
-            id: Math.floor(Math.random() * 10000) + 1,
-            senderId: localStorage.getItem('userId') || 'current-user-id',
-            receiverId,
-            content,
-            sentAt: new Date().toISOString(),
-            conversationId,
-            isDelivered: false
-        };
-
-        // Store in local storage
-        addMessageToStorage(mockMessage);
-
-        return mockMessage;
-    }
+// Send a message
+export const sendMessage = async (conversationId, receiverId, content) => {
+  try {
+    const response = await api.post('/chat/messages', {
+      conversationId,
+      receiverId,
+      content
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error sending message:', error);
+    throw error;
+  }
 };
 
-// Send a message via SignalR
-export const sendMessageViaSignalR = async(conversationId, receiverId, content) => {
-    try {
-        if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
-            connection = await initializeSignalRConnection();
-        }
-
-        if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
-            throw new Error('SignalR not connected');
-        }
-
-        await connection.invoke('SendMessage', conversationId, receiverId, content);
-        return true;
-    } catch (error) {
-        console.error('Error sending message via SignalR:', error);
-        return false;
-    }
-};
-
-// Mark a message as delivered
-export const markMessageAsDelivered = async(messageId) => {
-    try {
-        // First try to mark via SignalR
-        const signalRSuccess = await markMessageAsDeliveredViaSignalR(messageId);
-        if (signalRSuccess) {
-            return;
-        }
-
-        // If SignalR fails, fall back to REST API
-        const response = await api.put(`/chat/messages/${messageId}/delivered`);
-
-        // Update in local storage
-        updateMessageDeliveryStatus(messageId);
-
-        return response.data;
-    } catch (error) {
-        console.error('Error marking message as delivered:', error);
-
-        // Update in local storage anyway
-        updateMessageDeliveryStatus(messageId);
-
-        return { id: messageId, isDelivered: true };
-    }
-};
-
-// Mark a message as delivered via SignalR
-export const markMessageAsDeliveredViaSignalR = async(messageId) => {
-    try {
-        if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
-            connection = await initializeSignalRConnection();
-        }
-
-        if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
-            throw new Error('SignalR not connected');
-        }
-
-        await connection.invoke('MarkMessageAsDelivered', messageId);
-        return true;
-    } catch (error) {
-        console.error('Error marking message as delivered via SignalR:', error);
-        return false;
-    }
-};
+// Mark message as delivered
+export const markMessageAsDelivered = async (messageId) => {
+  try {
+    const response = await api.put(`/chat/messages/${messageId}/delivered`);
+    return response.data;
+  } catch (error) {
+    console.error('Error marking message as delivered:', error);
+    return null;
+  }
+}; 

@@ -7,6 +7,7 @@ using RealtimeAPI.Hubs;
 using RealtimeAPI.Models;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace RealtimeAPI.Controllers
 {
@@ -30,32 +31,53 @@ namespace RealtimeAPI.Controllers
         [HttpGet("conversations")]
         public async Task<IActionResult> GetConversations()
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+            _logger.LogInformation("GetConversations called");
             
-            var conversations = await _context.Conversations
-                .Include(c => c.Participant1)
-                .Include(c => c.Participant2)
-                .Include(c => c.Messages.OrderByDescending(m => m.SentAt).Take(1))
-                .Where(c => c.Participant1Id == userId || c.Participant2Id == userId)
-                .ToListAsync();
-
-            var result = conversations.Select(c => new
+            // Log all claims
+            var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            _logger.LogInformation("User claims: {Claims}", JsonSerializer.Serialize(claims));
+            
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            _logger.LogInformation("User ID from claims: {UserId}", userId);
+            
+            if (string.IsNullOrEmpty(userId))
             {
-                Id = c.Id,
-                Participant1 = new { c.Participant1.Id, c.Participant1.Username },
-                Participant2 = new { c.Participant2.Id, c.Participant2.Username },
-                LastMessage = c.Messages.FirstOrDefault() == null ? null : new
-                {
-                    c.Messages.First().Content,
-                    c.Messages.First().SentAt,
-                    c.Messages.First().IsDelivered,
-                    c.Messages.First().DeliveredAt
-                }
-            });
+                _logger.LogWarning("No user ID found in claims");
+                return Unauthorized();
+            }
+            
+            try
+            {
+                var conversations = await _context.Conversations
+                    .Include(c => c.Participant1)
+                    .Include(c => c.Participant2)
+                    .Include(c => c.Messages.OrderByDescending(m => m.SentAt).Take(1))
+                    .Where(c => c.Participant1Id == userId || c.Participant2Id == userId)
+                    .ToListAsync();
 
-            return Ok(result);
+                _logger.LogInformation("Found {Count} conversations for user {UserId}", conversations.Count, userId);
+
+                var result = conversations.Select(c => new
+                {
+                    Id = c.Id,
+                    Participant1 = new { c.Participant1.Id, c.Participant1.Username },
+                    Participant2 = new { c.Participant2.Id, c.Participant2.Username },
+                    LastMessage = c.Messages.FirstOrDefault() == null ? null : new
+                    {
+                        c.Messages.First().Content,
+                        c.Messages.First().SentAt,
+                        c.Messages.First().IsDelivered,
+                        c.Messages.First().DeliveredAt
+                    }
+                });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving conversations for user {UserId}", userId);
+                return StatusCode(500, "An error occurred while retrieving conversations");
+            }
         }
 
         [HttpGet("conversations/{conversationId}/messages")]
