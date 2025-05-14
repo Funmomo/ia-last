@@ -1,0 +1,412 @@
+{
+	"info": {
+		"_postman_id": "3a82e0f0-5f7b-4a4b-9e57-1d95e6e9d82c",
+		"name": "Pet Shelter - Adoption Requests",
+		"description": "Collection for testing the Adoption Requests API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.globals.set(\"token\", jsonData.token);",
+									"pm.globals.set(\"userId\", jsonData.id || jsonData.user.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login to get authentication token"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Adoption Requests",
+			"item": [
+				{
+					"name": "Get All Adoption Requests",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/Adoption",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Adoption"
+							]
+						},
+						"description": "Get all adoption requests (Admin/Staff only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Adoption Request By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"",
+									"// Define expected fields for primary adoption request",
+									"var requiredAdoptionFields = ['id', 'petId', 'pet', 'adopterId', 'adopter', 'shelterId', 'shelter', 'status', 'requestDate', 'updatedAt'];",
+									"",
+									"// Define expected fields for nested objects",
+									"var requiredPetFields = ['id', 'name', 'breed', 'age', 'description', 'status', 'imageUrl'];",
+									"var requiredUserFields = ['id', 'username', 'email'];",
+									"var requiredShelterFields = ['id', 'name', 'address', 'phone', 'email'];",
+									"",
+									"// Check if primary fields exist",
+									"var missingFields = [];",
+									"requiredAdoptionFields.forEach(function(field) {",
+									"    if (response[field] === undefined) {",
+									"        missingFields.push(field);",
+									"    }",
+									"});",
+									"",
+									"// Check if pet fields exist",
+									"var missingPetFields = [];",
+									"if (response.pet) {",
+									"    requiredPetFields.forEach(function(field) {",
+									"        if (response.pet[field] === undefined) {",
+									"            missingPetFields.push(field);",
+									"        }",
+									"    });",
+									"}",
+									"",
+									"// Check if adopter fields exist",
+									"var missingAdopterFields = [];",
+									"if (response.adopter) {",
+									"    requiredUserFields.forEach(function(field) {",
+									"        if (response.adopter[field] === undefined) {",
+									"            missingAdopterFields.push(field);",
+									"        }",
+									"    });",
+									"}",
+									"",
+									"// Check if shelter fields exist",
+									"var missingShelterFields = [];",
+									"if (response.shelter) {",
+									"    requiredShelterFields.forEach(function(field) {",
+									"        if (response.shelter[field] === undefined) {",
+									"            missingShelterFields.push(field);",
+									"        }",
+									"    });",
+									"}",
+									"",
+									"// Log the results",
+									"console.log('Missing primary fields:', missingFields);",
+									"console.log('Missing pet fields:', missingPetFields);",
+									"console.log('Missing adopter fields:', missingAdopterFields);",
+									"console.log('Missing shelter fields:', missingShelterFields);",
+									"",
+									"// Verify the results",
+									"pm.test(\"Primary adoption request fields are present\", function() {",
+									"    pm.expect(missingFields.length).to.equal(0);",
+									"});",
+									"",
+									"pm.test(\"Pet fields are present\", function() {",
+									"    pm.expect(missingPetFields.length).to.equal(0);",
+									"});",
+									"",
+									"pm.test(\"Adopter fields are present\", function() {",
+									"    pm.expect(missingAdopterFields.length).to.equal(0);",
+									"});",
+									"",
+									"pm.test(\"Shelter fields are present\", function() {",
+									"    pm.expect(missingShelterFields.length).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/Adoption/{{adoptionRequestId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Adoption",
+								"{{adoptionRequestId}}"
+							]
+						},
+						"description": "Get a specific adoption request by ID with validation tests"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Adoption Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.globals.set(\"adoptionRequestId\", jsonData.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"petId\": {{petId}},\n  \"shelterId\": {{shelterId}},\n  \"status\": 0\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Adoption",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Adoption"
+							]
+						},
+						"description": "Create a new adoption request"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Simple Adoption Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.globals.set(\"adoptionRequestId\", jsonData.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"petId\": {{petId}}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Adoption/simple",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Adoption",
+								"simple"
+							]
+						},
+						"description": "Create a new adoption request using the simplified endpoint (only requires petId)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User's Adoption Requests",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/Adoption/user/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Adoption",
+								"user",
+								"{{userId}}"
+							]
+						},
+						"description": "Get adoption requests for the current user"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Shelter's Adoption Requests",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/Adoption/shelter/{{shelterId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Adoption",
+								"shelter",
+								"{{shelterId}}"
+							]
+						},
+						"description": "Get adoption requests for a specific shelter"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Adoption Request Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Adoption/{{adoptionRequestId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Adoption",
+								"{{adoptionRequestId}}"
+							]
+						},
+						"description": "Update an adoption request's status"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://localhost:5001",
+			"type": "string"
+		},
+		{
+			"key": "username",
+			"value": "your_test_username",
+			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "your_test_password",
+			"type": "string"
+		},
+		{
+			"key": "petId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "shelterId",
+			"value": "1",
+			"type": "string"
+		}
+	]
+} 

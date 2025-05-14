@@ -167,10 +167,57 @@ const AdoptionForm = () => {
   const [pet, setPet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [existingRequest, setExistingRequest] = useState(false);
+
+  // Function to check if pet was already requested
+  const checkExistingRequest = () => {
+    const adoptionRequests = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('adoptionRequests='));
+    
+    if (adoptionRequests) {
+      const requestedPets = JSON.parse(decodeURIComponent(adoptionRequests.split('=')[1]));
+      return requestedPets.includes(parseInt(id));
+    }
+    return false;
+  };
+
+  // Function to save pet ID to cookies
+  const saveRequestToCookies = () => {
+    const existingCookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('adoptionRequests='));
+    
+    let requestedPets = [];
+    if (existingCookie) {
+      requestedPets = JSON.parse(decodeURIComponent(existingCookie.split('=')[1]));
+    }
+    
+    requestedPets.push(parseInt(id));
+    
+    // Set cookie to expire in 365 days
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 365);
+    
+    document.cookie = `adoptionRequests=${encodeURIComponent(JSON.stringify(requestedPets))}; expires=${expiryDate.toUTCString()}; path=/`;
+  };
 
   useEffect(() => {
-    const fetchPet = async () => {
+    const fetchData = async () => {
       try {
+        setLoading(true);
+        
+        // Check cookies first
+        const hasExistingRequest = checkExistingRequest();
+        if (hasExistingRequest) {
+          setExistingRequest(true);
+          setLoading(false);
+          return;
+        }
+
+        // If no cookie found, fetch pet data
         const data = await fetchApi(`/api/Pet/${id}`);
         setPet(data);
       } catch (err) {
@@ -179,12 +226,52 @@ const AdoptionForm = () => {
         setLoading(false);
       }
     };
-    fetchPet();
+    fetchData();
   }, [id]);
+
+  const handleAdoptionSubmit = async () => {
+    try {
+      // If there's already a request in cookies, don't submit
+      if (existingRequest || checkExistingRequest()) {
+        return;
+      }
+
+      setSubmitting(true);
+      setSubmitError(null);
+      
+      const token = localStorage.getItem('token');
+      
+      // Create the adoption request
+      const adoptionResponse = await fetch(`${API_BASE_URL}/api/Adoption/simple`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          petId: id
+        })
+      });
+
+      if (!adoptionResponse.ok) {
+        throw new Error('Failed to submit adoption request');
+      }
+
+      // Save to cookies after successful submission
+      saveRequestToCookies();
+      setExistingRequest(true);
+
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorDisplay message={error} />;
-  if (!pet) return <Navigate to="../pets" replace />;
+  if (!pet && !existingRequest) return <Navigate to="../pets" replace />;
 
   return (
     <div className={styles.adoptionPage}>
@@ -195,41 +282,60 @@ const AdoptionForm = () => {
         >
           ← Back to Pet Profile
         </button>
-        <h1>Adopt {pet.name}</h1>
+        <h1>Adopt {pet?.name}</h1>
       </div>
 
       <div className={styles.adoptionContent}>
-        <div className={styles.petSummary}>
-          <img 
-            src={pet.imageUrl || 'https://via.placeholder.com/300x200?text=Pet+Image'} 
-            alt={pet.name} 
-            className={styles.petImage}
-          />
-          <div className={styles.petInfo}>
-            <h2>{pet.name}</h2>
-            <p>{pet.breed} • {pet.age} years old</p>
-            <p>From: {pet.shelter?.name || 'Unknown Shelter'}</p>
+        {pet && (
+          <div className={styles.petSummary}>
+            <img 
+              src={pet.imageUrl || 'https://via.placeholder.com/300x200?text=Pet+Image'} 
+              alt={pet.name} 
+              className={styles.petImage}
+            />
+            <div className={styles.petInfo}>
+              <h2>{pet.name}</h2>
+              <p>{pet.breed} • {pet.age} years old</p>
+              <p>From: {pet.shelter?.name || 'Unknown Shelter'}</p>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className={styles.adoptionMessage}>
-          <h2>Adoption Process</h2>
-          <p>Thank you for your interest in adopting {pet.name}! This is a dummy adoption page.</p>
-          <p>In the real implementation, this page would include:</p>
-          <ul>
-            <li>Adoption application form</li>
-            <li>Requirements for adoption</li>
-            <li>Contact information verification</li>
-            <li>Schedule for meet and greet</li>
-          </ul>
+          <h2>{existingRequest ? 'Adoption Request Pending' : 'Confirm Adoption Request'}</h2>
+          {existingRequest ? (
+            <>
+              <p>You have already submitted an adoption request for this pet.</p>
+              <p>Please wait for the shelter to review your request.</p>
+              <p>Request Status: Pending</p>
+            </>
+          ) : (
+            <>
+              <p>You are about to submit an adoption request for this pet.</p>
+              <p>By confirming, you agree to:</p>
+              <ul>
+                <li>Provide a loving home for the pet</li>
+                <li>Complete any required follow-up interviews</li>
+                <li>Submit necessary documentation if requested</li>
+                <li>Follow the shelter's adoption guidelines</li>
+              </ul>
+            </>
+          )}
         </div>
+
+        {submitError && (
+          <div className={styles.error}>
+            <p>{submitError}</p>
+          </div>
+        )}
 
         <div className={styles.actionButtons}>
           <button 
-            className={styles.backToBrowsing}
-            onClick={() => navigate('..')}
+            className={`${styles.confirmButton} ${submitting ? styles.submitting : ''} ${existingRequest ? styles.pending : ''}`}
+            onClick={handleAdoptionSubmit}
+            disabled={submitting || existingRequest}
           >
-            Continue Browsing
+            {existingRequest ? 'Request Pending' : submitting ? 'Submitting...' : 'Confirm Adoption'}
           </button>
         </div>
       </div>
@@ -386,7 +492,8 @@ const PetsView = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchApi('/api/Pet');
+      // Use the available pets endpoint instead of getting all pets
+      const data = await fetchApi('/api/Pet/available');
       setPets(data);
     } catch (err) {
       setError(err.message);
@@ -598,7 +705,7 @@ const SheltersViewLimited = () => {
     <div className={styles.shelterGrid}>
       {shelters.length === 0 ? (
         <div className={styles.emptyState}>
-          <h2>No Shelters Available</h2>
+        <h2>No Shelters Available</h2>
           <p>Please check back later for partner shelters.</p>
         </div>
       ) : (

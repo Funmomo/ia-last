@@ -11,7 +11,7 @@ using RealtimeAPI.Models;
 namespace RealtimeAPI.Controllers
 {
     [ApiController]
-    [Route("api/users")]
+    [Route("api/User")]
     public class UserController : ControllerBase
     {
         private readonly IHubContext<ChatHub> _hubContext;

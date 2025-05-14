@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styles from '../../Styles/Admin.module.css';
 
+// Enum for shelter status
+const ShelterStatus = {
+  Pending: 0,
+  Active: 1,
+  Suspended: 2,
+  Inactive: 3
+};
+
 const ManageShelters = () => {
   const [shelters, setShelters] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,12 +42,10 @@ const ManageShelters = () => {
         }
       });
 
-      // Validate response data
       if (!response.data) {
         throw new Error('No data received from server');
       }
 
-      // Ensure we have an array of shelters
       const shelterData = Array.isArray(response.data) ? response.data : [];
       console.log('Fetched shelters:', shelterData);
       
@@ -49,7 +55,7 @@ const ManageShelters = () => {
       console.error('Error fetching shelters:', err);
       setError(err.message || 'Failed to fetch shelters');
       setLoading(false);
-      setShelters([]); // Reset shelters to empty array on error
+      setShelters([]);
     }
   };
 
@@ -70,22 +76,28 @@ const ManageShelters = () => {
         throw new Error('No authentication token found');
       }
 
-      await axios.post('https://localhost:5001/api/Shelter', newShelter, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      await axios.post('https://localhost:5001/api/Shelter', 
+        {
+          ...newShelter,
+          status: ShelterStatus.Pending // Set initial status as Pending
+        },
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
 
       setNewShelter({ name: '', address: '', phone: '', email: '' });
-      await fetchShelters(); // Refresh the list
+      await fetchShelters();
     } catch (err) {
       console.error('Error creating shelter:', err);
       setError(err.message || 'Failed to create shelter');
     }
   };
 
-  const updateShelterStatus = async (shelterId, isActive) => {
+  const updateShelterStatus = async (shelterId, currentStatus) => {
     try {
       setError(null);
       const token = localStorage.getItem('token');
@@ -93,35 +105,32 @@ const ManageShelters = () => {
         throw new Error('No authentication token found');
       }
 
-      // Get current shelter data first
-      const currentShelter = await axios.get(`https://localhost:5001/api/Shelter/${shelterId}`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!currentShelter.data) {
-        throw new Error('Failed to fetch current shelter details');
+      // Determine new status
+      let newStatus;
+      if (currentStatus === ShelterStatus.Pending || currentStatus === ShelterStatus.Inactive) {
+        newStatus = ShelterStatus.Active;
+      } else if (currentStatus === ShelterStatus.Active) {
+        newStatus = ShelterStatus.Inactive;
+      } else {
+        return; // Don't update if status is Suspended
       }
 
-      // Update the shelter with new status
-      await axios.put(`https://localhost:5001/api/Shelter/${shelterId}`, 
+      // Update shelter status using the dedicated endpoint
+      await axios.put(`https://localhost:5001/api/Shelter/${shelterId}/status`,
         {
-          ...currentShelter.data,
-          isActive: !isActive
+          status: newStatus
         },
-        { 
-          headers: { 
+        {
+          headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
       );
       
-      await fetchShelters(); // Refresh the list
+      await fetchShelters();
     } catch (err) {
-      console.error('Error updating shelter:', err);
+      console.error('Error updating shelter status:', err);
       setError(err.message || 'Failed to update shelter status');
     }
   };
@@ -143,11 +152,37 @@ const ManageShelters = () => {
         }
       });
       
-      await fetchShelters(); // Refresh the list
+      await fetchShelters();
     } catch (err) {
       console.error('Error deleting shelter:', err);
       setError(err.message || 'Failed to delete shelter');
     }
+  };
+
+  // Helper function to get status text
+  const getStatusText = (status) => {
+    switch (status) {
+      case ShelterStatus.Pending:
+        return 'Pending';
+      case ShelterStatus.Active:
+        return 'Active';
+      case ShelterStatus.Suspended:
+        return 'Suspended';
+      case ShelterStatus.Inactive:
+        return 'Inactive';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  // Helper function to get status button text
+  const getStatusButtonText = (status) => {
+    if (status === ShelterStatus.Pending || status === ShelterStatus.Inactive) {
+      return 'Activate';
+    } else if (status === ShelterStatus.Active) {
+      return 'Deactivate';
+    }
+    return 'No Action';
   };
 
   if (loading) {
@@ -175,7 +210,6 @@ const ManageShelters = () => {
         </div>
       )}
 
-      {/* Add New Shelter Form */}
       <form onSubmit={createShelter} className={styles['admin-form']}>
         <div className={styles['form-group']}>
           <input
@@ -245,18 +279,24 @@ const ManageShelters = () => {
                 <td>{shelter.address}</td>
                 <td>{shelter.phone}</td>
                 <td>{shelter.email}</td>
-                <td>{shelter.isActive ? 'Active' : 'Inactive'}</td>
+                <td>
+                  <span className={`${styles['status-badge']} ${styles[`status-${getStatusText(shelter.status).toLowerCase()}`]}`}>
+                    {getStatusText(shelter.status)}
+                  </span>
+                </td>
                 <td>
                   <div className={styles['action-buttons']}>
-                    <button 
-                      className={`${styles['admin-btn']} ${styles['admin-btn-primary']}`}
-                      onClick={() => updateShelterStatus(shelter.id || shelter.shelterId, shelter.isActive)}
-                    >
-                      {shelter.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button 
+                    {shelter.status !== ShelterStatus.Suspended && (
+                      <button
+                        onClick={() => updateShelterStatus(shelter.id, shelter.status)}
+                        className={`${styles['admin-btn']} ${shelter.status === ShelterStatus.Active ? styles['admin-btn-warning'] : styles['admin-btn-success']}`}
+                      >
+                        {getStatusButtonText(shelter.status)}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteShelter(shelter.id)}
                       className={`${styles['admin-btn']} ${styles['admin-btn-danger']}`}
-                      onClick={() => deleteShelter(shelter.id || shelter.shelterId)}
                     >
                       Delete
                     </button>

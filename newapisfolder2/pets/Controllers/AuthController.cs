@@ -111,15 +111,7 @@ namespace RealtimeAPI.Controllers
 
                 var token = GenerateJwtToken(user);
                 _logger.LogInformation($"User {user.Username} successfully logged in");
-                return Ok(new { 
-                    token = token,
-                    user = new {
-                        id = user.Id,
-                        username = user.Username,
-                        email = user.Email,
-                        role = user.Role
-                    }
-                });
+                return Ok(new { Token = token });
             }
             catch (Exception ex)
             {
@@ -143,8 +135,8 @@ namespace RealtimeAPI.Controllers
             };
 
             var token = new JwtSecurityToken(
-                issuer: "https://localhost:5001",
-                audience: "https://localhost:5001",
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.Now.AddHours(1),
                 signingCredentials: credentials

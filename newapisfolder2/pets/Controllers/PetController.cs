@@ -172,6 +172,7 @@ namespace RealtimeAPI.Controllers
         public string Description { get; set; } = string.Empty;
         public string MedicalHistory { get; set; } = string.Empty;
         public int ShelterId { get; set; }
+        public PetGender Gender { get; set; } = PetGender.Unknown;
     }
 
     public class PetStatusRequest
