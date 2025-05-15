@@ -40,9 +40,23 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidIssuer = "http://localhost:5000",
-        ValidAudience = "http://localhost:5000",
-        ValidateLifetime = false,
+        ValidIssuers = builder.Configuration.GetSection("Jwt:ValidIssuers").Get<string[]>() ?? 
+            new[] { 
+                builder.Configuration["Jwt:Issuer"] ?? "http://localhost:5000",
+                "https://localhost:5001", 
+                "http://localhost:5000",
+                "http://localhost:5001",
+                "https://localhost:5000"
+            },
+        ValidAudiences = builder.Configuration.GetSection("Jwt:ValidAudiences").Get<string[]>() ?? 
+            new[] { 
+                builder.Configuration["Jwt:Audience"] ?? "http://localhost:5000",
+                "https://localhost:5001", 
+                "http://localhost:5000",
+                "http://localhost:5001",
+                "https://localhost:5000"
+            },
+        ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured"))),
@@ -188,6 +202,21 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = "swagger";
     });
 }
+
+// Add CSP headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add(
+        "Content-Security-Policy",
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data: https:; " +
+        "font-src 'self' data:; " +
+        "connect-src 'self' wss: https:;"
+    );
+    await next();
+});
 
 // Add request logging middleware
 app.Use(async (context, next) =>

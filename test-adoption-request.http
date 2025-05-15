@@ -1,0 +1,48 @@
+### First Login to get token
+POST https://localhost:5001/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "your_test_username",
+  "password": "your_test_password"
+}
+
+### Get all adoption requests (Admin/Staff only)
+GET https://localhost:5001/api/Adoption
+Authorization: Bearer {{auth_token}}
+
+### Get a specific adoption request
+GET https://localhost:5001/api/Adoption/1
+Authorization: Bearer {{auth_token}}
+
+### Create a new adoption request
+POST https://localhost:5001/api/Adoption
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "petId": 1,
+  "shelterId": 1,
+  "status": 0
+}
+
+### Get adoption requests for a specific user
+GET https://localhost:5001/api/Adoption/user/your_user_id
+Authorization: Bearer {{auth_token}}
+
+### Get adoption requests for a specific shelter
+GET https://localhost:5001/api/Adoption/shelter/1
+Authorization: Bearer {{auth_token}}
+
+### Update an adoption request
+PUT https://localhost:5001/api/Adoption/1
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "id": 1,
+  "petId": 1,
+  "shelterId": 1,
+  "status": 1,
+  "adopterId": "your_user_id"
+} 

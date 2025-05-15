@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from '../Styles/Messaging.module.css';
-import { 
-  getConversations, 
-  getMessages, 
-  sendMessage, 
-  markMessageAsDelivered,
-  initializeSignalRConnection,
-  createConversation
-} from '../services/messageService';
-import { getShelters, getAdopters, getAllUsers } from '../services/userService';
+import { getConversations, getMessages, markMessageAsDelivered, sendMessage } from '../services/messageService';
+import { getShelters, getAdopters } from '../services/userService';
+import * as signalR from '../services/signalRService';
 
 const Messaging = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -22,44 +18,33 @@ const Messaging = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const messagesEndRef = useRef(null);
   const messageInputRef = useRef(null);
 
   // Get user info from localStorage
-  const userId = localStorage.getItem('userId') || 'current-user-id';
+  const userId = localStorage.getItem('userId');
   const userRole = parseInt(localStorage.getItem('userRole') || '2');
 
   useEffect(() => {
-    // Set up SignalR connection
-    const setupSignalR = async () => {
-      const connection = await initializeSignalRConnection();
-      
-      if (connection) {
-        // Handle receiving messages
-        window.messageReceived = (message) => {
-          if (selectedConversation && message.conversationId === selectedConversation.conversationId) {
-            setMessages(prevMessages => [...prevMessages, message]);
-            markMessageAsDelivered(message.id);
-          } else {
-            // Update unread count in conversation list
-            setConversations(prevConversations => 
-              prevConversations.map(conv => 
-                conv.conversationId === message.conversationId 
-                  ? { ...conv, unreadCount: (conv.unreadCount || 0) + 1 }
-                  : conv
-              )
-            );
-          }
-        };
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
 
-        // Handle message delivery status
-        window.messageDelivered = (messageId) => {
-          setMessages(prevMessages => 
-            prevMessages.map(msg => 
-              msg.id === messageId ? { ...msg, isDelivered: true } : msg
-            )
-          );
-        };
+    const setupSignalR = async () => {
+      try {
+        // Set up message handlers before connecting
+        window.messageReceived = handleMessageReceived;
+        window.messageDelivered = handleMessageDelivered;
+
+        // Start SignalR connection
+        const connected = await signalR.startSignalRConnection();
+        setConnectionStatus(connected ? 'connected' : 'disconnected');
+      } catch (error) {
+        console.error('Error setting up SignalR:', error);
+        setConnectionStatus('error');
       }
     };
 
@@ -70,11 +55,35 @@ const Messaging = () => {
     return () => {
       window.messageReceived = null;
       window.messageDelivered = null;
+      signalR.stopSignalRConnection();
     };
   }, []);
 
+  const handleMessageReceived = (message) => {
+    if (selectedConversation && message.conversationId === selectedConversation.id) {
+      setMessages(prevMessages => [...prevMessages, message]);
+      signalR.markMessageAsDelivered(message.id);
+    } else {
+      // Update unread count in conversation list
+      setConversations(prevConversations => 
+        prevConversations.map(conv => 
+          conv.id === message.conversationId 
+            ? { ...conv, unreadCount: (conv.unreadCount || 0) + 1 }
+            : conv
+        )
+      );
+    }
+  };
+
+  const handleMessageDelivered = (messageId) => {
+    setMessages(prevMessages => 
+      prevMessages.map(msg => 
+        msg.id === messageId ? { ...msg, isDelivered: true } : msg
+      )
+    );
+  };
+
   useEffect(() => {
-    // Scroll to bottom when messages change
     scrollToBottom();
   }, [messages]);
 
@@ -82,10 +91,15 @@ const Messaging = () => {
     try {
       setLoading(true);
       const data = await getConversations();
-      setConversations(data);
-      setLoading(false);
+      if (Array.isArray(data)) {
+        setConversations(data);
+      }
     } catch (error) {
       console.error('Error loading conversations:', error);
+      if (error.response?.status === 401) {
+        navigate('/login');
+      }
+    } finally {
       setLoading(false);
     }
   };
@@ -93,87 +107,24 @@ const Messaging = () => {
   const loadMessages = async (conversationId) => {
     try {
       const data = await getMessages(conversationId);
-      setMessages(data);
-      
-      // Mark unread messages as delivered
-      data.forEach(message => {
-        if (!message.isDelivered && message.receiverId === userId) {
-          markMessageAsDelivered(message.id);
-        }
-      });
-      
-      // Clear unread count for this conversation
-      setConversations(prevConversations => 
-        prevConversations.map(conv => 
-          conv.conversationId === conversationId 
-            ? { ...conv, unreadCount: 0 }
-            : conv
-        )
-      );
+      if (Array.isArray(data)) {
+        setMessages(data);
+        
+        // Mark unread messages as delivered
+        data.forEach(message => {
+          if (!message.isDelivered && message.receiverId === userId) {
+            markMessageAsDelivered(message.id);
+          }
+        });
+      }
     } catch (error) {
       console.error('Error loading messages:', error);
     }
   };
 
-  const loadAvailableUsers = async () => {
-    try {
-      setLoadingUsers(true);
-      let users = [];
-      
-      // Based on user role, load either shelters or adopters
-      if (userRole === 2) {
-        users = await getShelters(); // Adopters can message shelters
-      } else {
-        users = await getAdopters(); // Shelters can message adopters
-      }
-      
-      // If no users found, try the general users endpoint as fallback
-      if (!users || users.length === 0) {
-        console.log('No users found via role-specific endpoint, trying fallback...');
-        const allUsers = await getAllUsers();
-        
-        // Filter users based on role (exclude current user)
-        if (allUsers && allUsers.length > 0) {
-          users = allUsers.filter(user => 
-            user.id !== userId && 
-            ((userRole === 2 && user.role === 1) || (userRole === 1 && user.role === 2))
-          );
-        }
-      }
-      
-      // If still no users, create some mock data for testing
-      if (!users || users.length === 0) {
-        console.log('Creating mock users for testing...');
-        users = [
-          { id: 'test1', username: 'Shelter 1', email: 'shelter1@example.com', role: 1 },
-          { id: 'test2', username: 'Adopter 1', email: 'adopter1@example.com', role: 2 },
-          { id: 'test3', username: 'Shelter 2', email: 'shelter2@example.com', role: 1 }
-        ].filter(user => 
-          (userRole === 2 && user.role === 1) || (userRole === 1 && user.role === 2)
-        );
-      }
-      
-      setAvailableUsers(users);
-      setLoadingUsers(false);
-    } catch (error) {
-      console.error('Error loading available users:', error);
-      // Set mock data in case of error
-      const mockUsers = [
-        { id: 'test1', username: 'Shelter 1', email: 'shelter1@example.com', role: 1 },
-        { id: 'test2', username: 'Adopter 1', email: 'adopter1@example.com', role: 2 },
-        { id: 'test3', username: 'Shelter 2', email: 'shelter2@example.com', role: 1 }
-      ].filter(user => 
-        (userRole === 2 && user.role === 1) || (userRole === 1 && user.role === 2)
-      );
-      
-      setAvailableUsers(mockUsers);
-      setLoadingUsers(false);
-    }
-  };
-
   const handleSelectConversation = (conversation) => {
     setSelectedConversation(conversation);
-    loadMessages(conversation.conversationId);
+    loadMessages(conversation.id);
   };
 
   const handleSendMessage = async (e) => {
@@ -182,41 +133,28 @@ const Messaging = () => {
     if (!newMessage.trim() || !selectedConversation) return;
     
     try {
+      const receiverId = selectedConversation.participant1Id === userId 
+        ? selectedConversation.participant2Id 
+        : selectedConversation.participant1Id;
+
       const message = await sendMessage(
-        selectedConversation.conversationId,
-        selectedConversation.otherUser.id,
+        selectedConversation.id,
+        receiverId,
         newMessage.trim()
       );
-      
-      setMessages(prevMessages => [...prevMessages, message]);
-      setNewMessage('');
-      messageInputRef.current.focus();
+
+      if (message) {
+        setMessages(prev => [...prev, message]);
+        setNewMessage('');
+        messageInputRef.current?.focus();
+      }
     } catch (error) {
       console.error('Error sending message:', error);
-    }
-  };
-
-  const handleCreateConversation = async () => {
-    if (!selectedUser) return;
-    
-    try {
-      const newConversation = await createConversation(selectedUser.id);
-      
-      // Add the new conversation to the list
-      const conversationData = {
-        id: newConversation.id,
-        participants: newConversation.participants,
-        lastMessage: null,
-        unreadCount: 0
-      };
-      
-      setConversations(prev => [conversationData, ...prev]);
-      setSelectedConversation(conversationData);
-      setMessages([]);
-      setShowNewChatModal(false);
-      setSelectedUser(null);
-    } catch (error) {
-      console.error('Error creating conversation:', error);
+      if (error.response?.status === 401) {
+        navigate('/login');
+      } else {
+        alert('Failed to send message. Please try again.');
+      }
     }
   };
 
@@ -227,6 +165,21 @@ const Messaging = () => {
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString();
+    }
   };
 
   // Function to get initials from a name
@@ -248,14 +201,31 @@ const Messaging = () => {
   };
 
   // Filter conversations based on search term
-  const filteredConversations = conversations.filter(conv => {
-    const otherParticipant = conv.participant1?.id === userId ? conv.participant2 : conv.participant1;
-    return otherParticipant?.username?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-  });
+  const filteredConversations = conversations.filter(conv => 
+    conv.otherUser.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Filter available users based on search term
   const filteredUsers = availableUsers.filter(user => 
-    user?.username?.toLowerCase().includes(userSearchTerm.toLowerCase()) || false
+    user.username.toLowerCase().includes(userSearchTerm.toLowerCase())
+  );
+
+  // Update message rendering to show failed state
+  const renderMessage = (message) => (
+    <div 
+      key={message?.id} 
+      className={`${styles.messageItem} ${message?.senderId === userId ? styles.sent : styles.received} ${message?.failed ? styles.failed : ''}`}
+    >
+      {message?.content}
+      <div className={styles.messageTime}>
+        {message?.sentAt && formatTime(message.sentAt)}
+        {message?.senderId === userId && (
+          <span className={styles.messageStatus}>
+            {message?.failed ? ' • Failed' : message?.isDelivered ? ' • Delivered' : ' • Sending...'}
+          </span>
+        )}
+      </div>
+    </div>
   );
 
   if (loading) {
@@ -270,6 +240,9 @@ const Messaging = () => {
     <div className={styles.messagingContainer}>
       <div className={styles.messagingHeader}>
         <h1 className={styles.headerTitle}>Messages</h1>
+        <div className={`${styles.connectionStatus} ${styles[connectionStatus]}`}>
+          {connectionStatus === 'connected' ? '🟢 Connected' : '🔴 Disconnected'}
+        </div>
       </div>
       
       <div className={styles.messagingContent}>
@@ -295,16 +268,16 @@ const Messaging = () => {
           ) : (
             filteredConversations.map(conversation => (
               <div 
-                key={conversation.id} 
-                className={`${styles.conversationItem} ${selectedConversation?.id === conversation.id ? styles.active : ''}`}
+                key={conversation.conversationId} 
+                className={`${styles.conversationItem} ${selectedConversation?.conversationId === conversation.conversationId ? styles.active : ''}`}
                 onClick={() => handleSelectConversation(conversation)}
               >
                 <div className={styles.profilePic}>
-                  {getInitials(conversation.participant2?.username || 'User')}
+                  {getInitials(conversation.otherUser.username)}
                 </div>
                 <div className={styles.conversationInfo}>
                   <div className={styles.conversationName}>
-                    {conversation.participant2?.username || 'User'}
+                    {conversation.otherUser.username}
                   </div>
                   <div className={styles.lastMessage}>
                     {conversation.lastMessage?.content}
@@ -331,10 +304,10 @@ const Messaging = () => {
             <>
               <div className={styles.chatHeader}>
                 <div className={styles.profilePic}>
-                  {getInitials(selectedConversation.participant2?.username || 'User')}
+                  {getInitials(selectedConversation.otherUser.username)}
                 </div>
                 <div className={styles.chatName}>
-                  {selectedConversation.participant2?.username || 'User'}
+                  {selectedConversation.otherUser.username}
                 </div>
               </div>
               
@@ -347,22 +320,8 @@ const Messaging = () => {
                     </p>
                   </div>
                 ) : (
-                  messages.map((message, index) => (
-                    <div 
-                      key={message.id || index} 
-                      className={`${styles.messageItem} ${message.senderId === userId ? styles.sent : styles.received}`}
-                    >
-                      {message.content}
-                      <div className={styles.messageTime}>
-                        {formatTime(message.sentAt)}
-                        {message.senderId === userId && (
-                          <span className={styles.messageStatus}>
-                            {message.isDelivered ? ' • Delivered' : ' • Sending...'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))
+                  messages.filter(message => message && typeof message === 'object')
+                    .map(renderMessage)
                 )}
                 <div ref={messagesEndRef} />
               </div>

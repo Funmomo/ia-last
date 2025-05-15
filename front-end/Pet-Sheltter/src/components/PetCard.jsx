@@ -9,6 +9,45 @@ const PetCard = ({ pet }) => {
     navigate(`/adopter/pet/${pet.id}`);
   };
 
+  // Get the pet's category name (type)
+  const getPetType = () => {
+    if (pet.category && pet.category.name) {
+      return pet.category.name;
+    } else if (pet.categoryId) {
+      return `Category ${pet.categoryId}`;
+    } else {
+      return 'Unknown';
+    }
+  };
+
+  // Get the pet's gender
+  const getPetGender = () => {
+    switch (pet.gender) {
+      case 0: return 'Male';
+      case 1: return 'Female';
+      default: return 'Unknown';
+    }
+  };
+
+  // Get the shelter name
+  const getShelterName = () => {
+    if (pet.shelter) {
+      // If shelter is a full object with a name property
+      if (pet.shelter.name) {
+        return pet.shelter.name;
+      }
+      // If shelter is just a string itself
+      if (typeof pet.shelter === 'string') {
+        return pet.shelter;
+      }
+    }
+    // Try to get a name from the shelterId
+    if (pet.shelterId) {
+      return `Shelter #${pet.shelterId}`;
+    }
+    return 'Unknown Shelter';
+  };
+
   return (
     <div className={styles.card}>
       <div className={styles.imageContainer}>
@@ -23,7 +62,7 @@ const PetCard = ({ pet }) => {
         <div className={styles.details}>
           <div className={styles.detailItem}>
             <span className={styles.label}>Type:</span>
-            <span>{pet.type || 'Unknown'}</span>
+            <span>{getPetType()}</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Breed:</span>
@@ -33,11 +72,15 @@ const PetCard = ({ pet }) => {
             <span className={styles.label}>Age:</span>
             <span>{pet.age ? `${pet.age} years` : 'Unknown'}</span>
           </div>
+          <div className={styles.detailItem}>
+            <span className={styles.label}>Gender:</span>
+            <span>{getPetGender()}</span>
+          </div>
         </div>
         
         <div className={styles.shelterInfo}>
           <h3 className={styles.shelterName}>
-            {pet.shelter || 'Unknown Shelter'}
+            {getShelterName()}
           </h3>
         </div>
 

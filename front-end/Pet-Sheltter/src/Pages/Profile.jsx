@@ -11,6 +11,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [adoptionRequests, setAdoptionRequests] = useState([]);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -37,13 +38,33 @@ const Profile = () => {
         
         // Get online users
         console.log('Fetching online users...');
-        await fetchOnlineUsers();
-        console.log('Online users fetched successfully');
+        try {
+          await fetchOnlineUsers();
+          console.log('Online users fetched successfully');
+        } catch (onlineUsersError) {
+          console.error('Error fetching online users:', onlineUsersError);
+          // Continue with other operations even if this fails
+        }
         
         // Connect user to the system
         console.log('Connecting user to the system...');
-        await connectUser();
-        console.log('User connected successfully');
+        try {
+          await connectUser();
+          console.log('User connected successfully');
+        } catch (connectError) {
+          console.error('Error connecting user:', connectError);
+          // Continue even if this fails
+        }
+
+        // Fetch user's adoption requests
+        console.log('Fetching adoption requests...');
+        try {
+          await fetchAdoptionRequests();
+          console.log('Adoption requests fetched successfully');
+        } catch (adoptionRequestsError) {
+          console.error('Error fetching adoption requests:', adoptionRequestsError);
+          // Continue even if this fails
+        }
 
         setLoading(false);
       } catch (err) {
@@ -117,11 +138,14 @@ const Profile = () => {
 
   const fetchOnlineUsers = async () => {
     try {
+      const token = localStorage.getItem('token');
+      
       const response = await fetch(`${API_BASE_URL}/api/User/online`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -139,6 +163,8 @@ const Profile = () => {
 
   const connectUser = async () => {
     try {
+      const token = localStorage.getItem('token');
+      
       const userInfo = {
         connectionId: connectionId,
         username: localStorage.getItem('userEmail') || 'Anonymous User',
@@ -150,7 +176,8 @@ const Profile = () => {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(userInfo)
       });
@@ -168,11 +195,14 @@ const Profile = () => {
 
   const disconnectUser = async () => {
     try {
+      const token = localStorage.getItem('token');
+      
       const response = await fetch(`${API_BASE_URL}/api/User/disconnect`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(connectionId)
       });
@@ -190,6 +220,8 @@ const Profile = () => {
 
   const updateUserStatus = async (status) => {
     try {
+      const token = localStorage.getItem('token');
+      
       const statusUpdate = {
         connectionId: connectionId,
         status: status
@@ -199,7 +231,8 @@ const Profile = () => {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(statusUpdate)
       });
@@ -213,6 +246,59 @@ const Profile = () => {
     } catch (err) {
       console.error('Error updating user status:', err);
       throw err;
+    }
+  };
+
+  const fetchAdoptionRequests = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userId');
+      
+      if (!token || !userId) {
+        console.log('User not authenticated, skipping adoption requests fetch');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/Adoption/user/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch adoption requests: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAdoptionRequests(data);
+    } catch (err) {
+      console.error('Error fetching adoption requests:', err);
+      throw err;
+    }
+  };
+
+  const getAdoptionStatusText = (status) => {
+    switch (status) {
+      case 0: return 'Pending';
+      case 1: return 'Interview Scheduled';
+      case 2: return 'Approved';
+      case 3: return 'Rejected';
+      case 4: return 'Cancelled';
+      default: return 'Unknown';
+    }
+  };
+
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 0: return styles.statusPending;
+      case 1: return styles.statusInterview;
+      case 2: return styles.statusApproved;
+      case 3: return styles.statusRejected;
+      case 4: return styles.statusCancelled;
+      default: return '';
     }
   };
 
@@ -374,6 +460,42 @@ const Profile = () => {
               </div>
             </div>
           )}
+
+          {/* Adoption Requests Section */}
+          <div className={styles.adoptionRequestsSection}>
+            <h2 className={styles.sectionTitle}>My Adoption Requests</h2>
+            
+            {adoptionRequests.length > 0 ? (
+              <div className={styles.requestsContainer}>
+                {adoptionRequests.map(request => (
+                  <div key={request.id} className={styles.requestCard}>
+                    <div className={styles.requestHeader}>
+                      <h3>{request.pet?.name || `Pet #${request.petId}`}</h3>
+                      <span className={`${styles.statusBadge} ${getStatusBadgeClass(request.status)}`}>
+                        {getAdoptionStatusText(request.status)}
+                      </span>
+                    </div>
+                    <div className={styles.requestDetails}>
+                      <p>
+                        <strong>Shelter:</strong> {request.shelter?.name || `Shelter #${request.shelterId}`}
+                      </p>
+                      <p>
+                        <strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}
+                      </p>
+                      <p>
+                        <strong>Last Updated:</strong> {new Date(request.updatedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.noRequests}>
+                <p>You haven't submitted any adoption requests yet.</p>
+                <p>Visit the <a href="/adopter/pets">Pets page</a> to find your new friend!</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

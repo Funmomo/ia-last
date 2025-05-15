@@ -32,6 +32,8 @@ namespace RealtimeAPI.Models
         
         public string? ImageUrl { get; set; }
         
+        public int Gender { get; set; } = (int)PetGender.Unknown;
+        
         public DateTime AddedAt { get; set; } = DateTime.UtcNow;
         
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

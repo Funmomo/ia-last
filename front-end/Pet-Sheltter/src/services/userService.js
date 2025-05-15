@@ -14,8 +14,8 @@ export const getUsers = async() => {
 // Get shelters (for adopters to message)
 export const getShelters = async() => {
     try {
-        // Using the UserController endpoint for getting users by role
-        const response = await api.get('/users/role/1'); // Role 1 is for shelter staff
+        // This needs to match your backend endpoint - adjust as needed
+        const response = await api.get('/users/role/1'); // Assuming role 1 is for shelter staff
         return response.data || [];
     } catch (error) {
         console.error('Error fetching shelters:', error);
@@ -27,8 +27,8 @@ export const getShelters = async() => {
 // Get adopters (for shelters to message)
 export const getAdopters = async() => {
     try {
-        // Using the UserController endpoint for getting users by role
-        const response = await api.get('/users/role/2'); // Role 2 is for adopters
+        // This needs to match your backend endpoint - adjust as needed
+        const response = await api.get('/users/role/2'); // Assuming role 2 is for adopters
         return response.data || [];
     } catch (error) {
         console.error('Error fetching adopters:', error);
@@ -40,7 +40,7 @@ export const getAdopters = async() => {
 // Fallback method to get users if specific role endpoints don't exist
 export const getAllUsers = async() => {
     try {
-        // Using the UserController endpoint for getting all users
+        // Fallback to getting all users if specific role endpoints aren't available
         const response = await api.get('/users/all');
         return response.data || [];
     } catch (error) {

@@ -29,6 +29,10 @@ namespace RealtimeAPI.Data.Configurations
             builder.Property(p => p.Status)
                 .IsRequired();
 
+            builder.Property(p => p.Gender)
+                .IsRequired()
+                .HasDefaultValue(PetGender.Unknown);
+
             builder.Property(p => p.ImageUrl)
                 .HasMaxLength(500);
 

@@ -1,782 +1,845 @@
 :root {
-  --primary-color: #60a3bc;
-  --accent-color: #e25151;
-  --text-color: #2c3e50;
-  --background-color: #f5f7fa;
+    --primary-color: #60a3bc;
+    --accent-color: #e25151;
+    --text-color: #2c3e50;
+    --background-color: #f5f7fa;
 }
 
 .container {
-  padding-top: 80px;
-  min-height: 100vh;
-  background-color: var(--background-color);
-  color: var(--text-color);
+    padding-top: 80px;
+    min-height: 100vh;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
 .content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
 }
 
 .mainContent {
-  margin-top: 2rem;
+    margin-top: 2rem;
 }
 
 .section {
-  margin-bottom: 3rem;
+    margin-bottom: 3rem;
 }
 
 .section:last-child {
-  margin-bottom: 0;
+    margin-bottom: 0;
 }
 
 .sectionTitle {
-  font-size: 2rem;
-  color: var(--text-color);
-  margin-bottom: 1.5rem;
-  font-weight: 700;
-  text-align: center;
-  position: relative;
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    position: relative;
 }
 
 .sectionTitle::after {
-  content: '';
-  position: absolute;
-  bottom: -0.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 3px;
-  background-color: var(--primary-color);
-  border-radius: 3px;
+    content: '';
+    position: absolute;
+    bottom: -0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background-color: var(--primary-color);
+    border-radius: 3px;
 }
 
 .welcomeSection {
-  background: linear-gradient(135deg, var(--primary-color), #f97f7f);
-  padding: 3rem;
-  border-radius: 16px;
-  color: white;
-  margin-bottom: 2.5rem;
-  box-shadow: 0 8px 20px rgba(226, 81, 81, 0.2);
-  position: relative;
-  overflow: hidden;
+    background: linear-gradient(135deg, var(--primary-color), #f97f7f);
+    padding: 3rem;
+    border-radius: 16px;
+    color: white;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 8px 20px rgba(226, 81, 81, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 
 .welcomeSection::before {
-  content: '';
-  position: absolute;
-  top: -10%;
-  right: -10%;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  z-index: 0;
+    content: '';
+    position: absolute;
+    top: -10%;
+    right: -10%;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    z-index: 0;
 }
 
 .welcomeTitle {
-  font-size: 2.75rem;
-  margin-bottom: 1.25rem;
-  font-weight: 700;
-  position: relative;
-  z-index: 1;
+    font-size: 2.75rem;
+    margin-bottom: 1.25rem;
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
 }
 
 .welcomeText {
-  font-size: 1.2rem;
-  opacity: 0.95;
-  max-width: 600px;
-  line-height: 1.7;
-  position: relative;
-  z-index: 1;
+    font-size: 1.2rem;
+    opacity: 0.95;
+    max-width: 600px;
+    line-height: 1.7;
+    position: relative;
+    z-index: 1;
 }
 
 .cardGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 2.5rem;
-  margin-top: 2.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2.5rem;
+    margin-top: 2.5rem;
 }
 
 .card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.75rem;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+    background: white;
+    border-radius: 12px;
+    padding: 1.75rem;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 .cardTitle {
-  font-size: 1.4rem;
-  color: var(--text-color);
-  margin-bottom: 1.25rem;
-  font-weight: 600;
+    font-size: 1.4rem;
+    color: var(--text-color);
+    margin-bottom: 1.25rem;
+    font-weight: 600;
 }
 
 .cardText {
-  color: #4a5568;
-  line-height: 1.7;
+    color: #4a5568;
+    line-height: 1.7;
 }
 
 .actionButton {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.85rem 1.75rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  margin-top: 1.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 8px rgba(226, 81, 81, 0.25);
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.85rem 1.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(226, 81, 81, 0.25);
 }
 
 .actionButton:hover {
-  background-color: #d13030;
-  box-shadow: 0 6px 12px rgba(226, 81, 81, 0.3);
-  transform: translateY(-2px);
+    background-color: #d13030;
+    box-shadow: 0 6px 12px rgba(226, 81, 81, 0.3);
+    transform: translateY(-2px);
 }
 
 .title {
-  font-size: 2.25rem;
-  color: var(--text-color);
-  margin-bottom: 2.5rem;
-  text-align: center;
-  font-weight: 700;
-  position: relative;
-  padding-bottom: 1rem;
+    font-size: 2.25rem;
+    color: var(--text-color);
+    margin-bottom: 2.5rem;
+    text-align: center;
+    font-weight: 700;
+    position: relative;
+    padding-bottom: 1rem;
 }
 
 .title::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 3px;
-  background-color: var(--primary-color);
-  border-radius: 3px;
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background-color: var(--primary-color);
+    border-radius: 3px;
 }
 
 .searchSection {
-  margin-bottom: 2.5rem;
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2.5rem;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .shelterGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
 }
 
 .shelterCard {
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .shelterCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .shelterContent {
-  padding: 1.5rem;
+    padding: 1.5rem;
 }
 
 .shelterName {
-  font-size: 1.2rem;
-  color: var(--text-color);
-  margin-bottom: 0.5rem;
-  font-weight: 600;
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
 }
 
 .shelterAddress {
-  color: #64748b;
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
+    color: #64748b;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
 }
 
 .knowMoreButton {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 100%;
-  font-size: 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    font-size: 1rem;
 }
 
 .knowMoreButton:hover {
-  background-color: #4a8ca3;
-  transform: translateY(-2px);
+    background-color: #4a8ca3;
+    transform: translateY(-2px);
 }
 
 .petsSection {
-  margin-top: -0.5rem;
+    margin-top: -0.5rem;
 }
 
 .petGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
 }
 
 .loading {
-  text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
-  color: #4a5568;
-  position: relative;
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+    color: #4a5568;
+    position: relative;
 }
 
 .loading::after {
-  content: '';
-  display: block;
-  width: 60px;
-  height: 60px;
-  margin: 1rem auto;
-  border-radius: 50%;
-  border: 4px solid rgba(96, 163, 188, 0.3);
-  border-top-color: var(--primary-color);
-  animation: spin 1s ease-in-out infinite;
+    content: '';
+    display: block;
+    width: 60px;
+    height: 60px;
+    margin: 1rem auto;
+    border-radius: 50%;
+    border: 4px solid rgba(96, 163, 188, 0.3);
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .error {
-  text-align: center;
-  padding: 2.5rem;
-  color: #e53e3e;
-  background-color: #fff5f5;
-  border-radius: 12px;
-  margin: 1.5rem;
-  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.15);
-  border: 1px solid rgba(229, 62, 62, 0.2);
+    text-align: center;
+    padding: 2.5rem;
+    color: #e53e3e;
+    background-color: #fff5f5;
+    border-radius: 12px;
+    margin: 1.5rem;
+    box-shadow: 0 4px 12px rgba(229, 62, 62, 0.15);
+    border: 1px solid rgba(229, 62, 62, 0.2);
 }
 
 .error h3 {
-  margin: 0 0 1rem 0;
-  color: #c53030;
-  font-size: 1.5rem;
+    margin: 0 0 1rem 0;
+    color: #c53030;
+    font-size: 1.5rem;
 }
 
 .error p {
-  margin: 0 0 1.5rem 0;
-  color: #742a2a;
+    margin: 0 0 1.5rem 0;
+    color: #742a2a;
 }
 
 .noPets,
 .noShelters {
-  text-align: center;
-  padding: 3rem 2rem;
-  color: #64748b;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  font-size: 1.1rem;
-  grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #64748b;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    font-size: 1.1rem;
+    grid-column: 1 / -1;
 }
 
 .retryButton {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .retryButton:hover {
-  background-color: #4a8ca3;
-  transform: translateY(-2px);
+    background-color: #4a8ca3;
+    transform: translateY(-2px);
 }
 
+
 /* Empty State Styles */
+
 .emptyState {
-  text-align: center;
-  padding: 3rem 2rem;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-  margin: 2rem auto;
-  max-width: 600px;
+    text-align: center;
+    padding: 3rem 2rem;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    margin: 2rem auto;
+    max-width: 600px;
 }
 
 .emptyStateIcon {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
-  color: var(--primary-color);
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
 }
 
 .emptyState h2 {
-  font-size: 1.8rem;
-  color: var(--text-color);
-  margin-bottom: 1rem;
+    font-size: 1.8rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
 }
 
 .emptyState p {
-  color: #718096;
-  margin-bottom: 2rem;
-  font-size: 1.1rem;
+    color: #718096;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
 }
 
+
 /* Responsive Design */
+
 @media (max-width: 768px) {
-  .content {
-    padding: 1rem;
-  }
-
-  .section {
-    margin-bottom: 2.5rem;
-  }
-
-  .sectionTitle {
-    font-size: 1.75rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .shelterGrid,
-  .petGrid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .shelterContent {
-    padding: 1.25rem;
-  }
-
-  .shelterName {
-    font-size: 1.25rem;
-  }
-
-  .knowMoreButton {
-    padding: 0.625rem 1.25rem;
-  }
+    .content {
+        padding: 1rem;
+    }
+    .section {
+        margin-bottom: 2.5rem;
+    }
+    .sectionTitle {
+        font-size: 1.75rem;
+        margin-bottom: 1.25rem;
+    }
+    .shelterGrid,
+    .petGrid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    .shelterContent {
+        padding: 1.25rem;
+    }
+    .shelterName {
+        font-size: 1.25rem;
+    }
+    .knowMoreButton {
+        padding: 0.625rem 1.25rem;
+    }
 }
 
 @media (max-width: 480px) {
-  .content {
-    padding: 0.75rem;
-  }
-
-  .section {
-    margin-bottom: 2rem;
-  }
-
-  .sectionTitle {
-    font-size: 1.5rem;
-  }
+    .content {
+        padding: 0.75rem;
+    }
+    .section {
+        margin-bottom: 2rem;
+    }
+    .sectionTitle {
+        font-size: 1.5rem;
+    }
 }
 
+
 /* Pet Details Page */
+
 .petDetailsPage {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .petDetailsHeader {
-  margin-bottom: 2rem;
+    margin-bottom: 2rem;
 }
 
 .backButton {
-  background: none;
-  border: none;
-  color: var(--primary-color);
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  transition: background-color 0.2s;
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: background-color 0.2s;
 }
 
 .backButton:hover {
-  background-color: rgba(96, 163, 188, 0.1);
+    background-color: rgba(96, 163, 188, 0.1);
 }
 
 .petMainInfo {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
 }
 
 .petImageSection {
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .petDetailImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .petInfo {
-  padding: 1rem;
+    padding: 1rem;
 }
 
 .petName {
-  font-size: 2.5rem;
-  color: var(--text-color);
-  margin-bottom: 1.5rem;
+    font-size: 2.5rem;
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
 }
 
 .petAttributes {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
 }
 
 .attributeItem {
-  background: white;
-  padding: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .attributeLabel {
-  color: var(--text-color);
-  font-weight: 600;
-  display: block;
-  margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.5rem;
 }
 
 .attributeValue {
-  color: var(--primary-color);
-  font-size: 1.1rem;
+    color: var(--primary-color);
+    font-size: 1.1rem;
 }
 
 .petDescription {
-  margin: 2rem 0;
+    margin: 2rem 0;
 }
 
 .petDescription h2 {
-  color: var(--text-color);
-  margin-bottom: 1rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
 }
 
 .petDescription p {
-  line-height: 1.6;
-  color: #666;
+    line-height: 1.6;
+    color: #666;
 }
 
 .actionButtons {
-  margin-top: 2rem;
-  display: flex;
-  gap: 1rem;
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
 }
 
 .adoptButton {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .adoptButton:hover {
-  background-color: var(--accent-color);
-  transform: translateY(-2px);
+    background-color: var(--accent-color);
+    transform: translateY(-2px);
 }
 
+
 /* Adoption Form Page */
+
 .adoptionPage {
-  padding: 2rem;
-  max-width: 800px;
-  margin: 0 auto;
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
 .adoptionHeader {
-  margin-bottom: 2rem;
-  text-align: center;
+    margin-bottom: 2rem;
+    text-align: center;
 }
 
 .adoptionContent {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .petSummary {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #eee;
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #eee;
 }
 
 .petSummary img {
-  width: 200px;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 12px;
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
 }
 
 .adoptionMessage {
-  margin: 2rem 0;
+    margin: 2rem 0;
 }
 
 .adoptionMessage h2 {
-  color: var(--text-color);
-  margin-bottom: 1rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
 }
 
 .adoptionMessage ul {
-  list-style-type: none;
-  padding: 0;
+    list-style-type: none;
+    padding: 0;
 }
 
 .adoptionMessage li {
-  padding: 0.5rem 0;
-  color: #666;
+    padding: 0.5rem 0;
+    color: #666;
 }
 
 .adoptionMessage li:before {
-  content: "•";
-  color: var(--primary-color);
-  font-weight: bold;
-  display: inline-block;
-  width: 1em;
-  margin-left: -1em;
+    content: "•";
+    color: var(--primary-color);
+    font-weight: bold;
+    display: inline-block;
+    width: 1em;
+    margin-left: -1em;
 }
 
+
 /* Shelter Details Page */
+
 .shelterDetailsPage {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .shelterMainInfo {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
 }
 
 .shelterName {
-  font-size: 2.5rem;
-  color: var(--text-color);
-  margin-bottom: 1.5rem;
+    font-size: 2.5rem;
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
 }
 
 .shelterAttributes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
 }
 
 .shelterPetsSection {
-  margin: 3rem 0;
+    margin: 3rem 0;
 }
 
 .shelterPetsSection h2 {
-  margin-bottom: 2rem;
-  color: var(--text-color);
+    margin-bottom: 2rem;
+    color: var(--text-color);
 }
 
 .suggestedShelters {
-  margin-top: 3rem;
+    margin-top: 3rem;
 }
 
 .suggestedShelters h2 {
-  margin-bottom: 2rem;
-  color: var(--text-color);
+    margin-bottom: 2rem;
+    color: var(--text-color);
 }
 
+
 /* Responsive Design */
+
 @media (max-width: 768px) {
-  .petMainInfo {
-    grid-template-columns: 1fr;
-  }
-
-  .petSummary {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .shelterAttributes {
-    grid-template-columns: 1fr;
-  }
+    .petMainInfo {
+        grid-template-columns: 1fr;
+    }
+    .petSummary {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .shelterAttributes {
+        grid-template-columns: 1fr;
+    }
 }
 
 .sectionHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
 }
 
 .viewAllButton {
-  background: none;
-  border: 2px solid var(--primary-color);
-  color: var(--primary-color);
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+    background: none;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .viewAllButton:hover {
-  background-color: var(--primary-color);
-  color: white;
+    background-color: var(--primary-color);
+    color: white;
 }
 
+
 /* Simplified pet cards for shelter page */
+
 .shelterPetsSection .petCard {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: white;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .shelterPetsSection .petName {
-  font-size: 1.2rem;
-  color: var(--text-color);
-  margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin: 0;
 }
 
 .shelterPetsSection .adoptButton {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
 }
+
 
 /* Update the shelter pets grid to be a list */
+
 .shelterPetsSection .petGrid {
-  display: block;
-  max-width: 800px;
-  margin: 0 auto;
+    display: block;
+    max-width: 800px;
+    margin: 0 auto;
 }
+
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
-  .sectionHeader {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
 
-  .viewAllButton {
-    width: 100%;
-    max-width: 200px;
-  }
+@media (max-width: 768px) {
+    .sectionHeader {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    .viewAllButton {
+        width: 100%;
+        max-width: 200px;
+    }
 }
 
+
 /* Pet Card Container */
+
 .petCardContainer {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .petCardContainer:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .petImage {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
 }
 
 .petCardContent {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .petName {
-  font-size: 1.25rem;
-  color: var(--text-color);
-  margin: 0;
-  font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--text-color);
+    margin: 0;
+    font-weight: 600;
 }
 
 .petBreed {
-  color: #666;
-  margin: 0;
-  font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+    font-size: 0.9rem;
 }
 
 .adoptButton {
-  background-color: #2196f3;
-  color: white;
-  border: none;
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  width: 100%;
-  margin-top: auto;
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+    margin-top: auto;
 }
 
 .adoptButton:hover {
-  background-color: #1976d2;
+    background-color: #1976d2;
 }
+
 
 /* Update shelter pets grid */
+
 .shelterPetsSection .petGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 2rem;
-  padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 2rem;
+    padding: 1rem;
 }
 
+
 /* Update empty state in shelter pets section */
+
 .shelterPetsSection .emptyState {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 2rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-} 
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.confirmButton {
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    max-width: 300px;
+    margin: 20px auto;
+    display: block;
+}
+
+.confirmButton:hover {
+    background-color: #45a049;
+}
+
+.confirmButton:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.confirmButton.pending {
+    background-color: #9e9e9e;
+    cursor: not-allowed;
+}
+
+.confirmButton.pending:hover {
+    background-color: #9e9e9e;
+}
+
+.submitting {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.error {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 12px;
+    border-radius: 4px;
+    margin: 16px 0;
+    text-align: center;
+}
