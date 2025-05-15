@@ -485,16 +485,24 @@ const ShelterDetails = () => {
 // Pets View Component
 const PetsView = () => {
   const [pets, setPets] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchPets = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      // Use the available pets endpoint instead of getting all pets
-      const data = await fetchApi('/api/Pet/available');
-      setPets(data);
+      
+      // Fetch pets and categories in parallel
+      const [petsData, categoriesData] = await Promise.all([
+        fetchApi('/api/Pet/available'),
+        fetchApi('/api/Category')
+      ]);
+      
+      setPets(petsData);
+      setCategories(categoriesData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -503,22 +511,46 @@ const PetsView = () => {
   }, []);
 
   useEffect(() => {
-    fetchPets();
-  }, [fetchPets]);
+    fetchData();
+  }, [fetchData]);
+
+  // Filter pets based on selected category
+  const filteredPets = selectedCategory === 'all' 
+    ? pets 
+    : pets.filter(pet => pet.categoryId === parseInt(selectedCategory));
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorDisplay message={error} onRetry={fetchPets} />;
+  if (error) return <ErrorDisplay message={error} onRetry={fetchData} />;
 
   return (
     <div className={styles.petsSection}>
+      <div className={styles.filterSection}>
+        <select 
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className={styles.categoryFilter}
+        >
+          <option value="all">All Categories</option>
+          {categories.map(category => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className={styles.petGrid}>
-        {pets.length === 0 ? (
+        {filteredPets.length === 0 ? (
           <div className={styles.emptyState}>
             <h2>No Pets Available</h2>
-            <p>Check back later for new additions to our pet family!</p>
+            <p>
+              {selectedCategory === 'all' 
+                ? 'Check back later for new additions to our pet family!'
+                : 'No pets available in this category. Try another category or check back later.'}
+            </p>
           </div>
         ) : (
-          pets.map(pet => (
+          filteredPets.map(pet => (
             <PetCard
               key={pet.id}
               pet={{
