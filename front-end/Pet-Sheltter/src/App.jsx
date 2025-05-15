@@ -9,6 +9,7 @@ import Admin from "./Pages/Admin";
 import Profile from "./Pages/Profile";
 import MyPets from "./Pages/MyPets";
 import Messaging from "./Pages/Messaging";
+import UserAdoptions from "./Pages/UserAdoptions";
 import { PrivateRoute, PublicOnlyRoute } from "./components/ProtectedRoute";
 
 export default function App() {
@@ -105,6 +106,16 @@ export default function App() {
           element={
             <PrivateRoute allowedRoles={[2]}>
               <MyPets />
+            </PrivateRoute>
+          }
+        />
+
+        {/* User adoptions route - only for adopters */}
+        <Route
+          path="/adopter/applications"
+          element={
+            <PrivateRoute allowedRoles={[2]}>
+              <UserAdoptions />
             </PrivateRoute>
           }
         />

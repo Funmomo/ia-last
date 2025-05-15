@@ -111,7 +111,13 @@ namespace RealtimeAPI.Controllers
 
                 var token = GenerateJwtToken(user);
                 _logger.LogInformation($"User {user.Username} successfully logged in");
-                return Ok(new { Token = token });
+                return Ok(new { 
+                    Token = token,
+                    UserId = user.Id,
+                    Username = user.Username,
+                    Email = user.Email,
+                    Role = user.Role
+                });
             }
             catch (Exception ex)
             {

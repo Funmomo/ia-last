@@ -733,40 +733,61 @@ const SheltersViewLimited = () => {
 };
 
 // Auth Check Component
-const AuthCheck = () => {
-  const userRole = parseInt(localStorage.getItem('userRole'));
-  
-  if (!localStorage.getItem('token')) {
-    return <Navigate to="/login" replace />;
+const AuthCheck = ({ onCheck }) => {
+  const [checking, setChecking] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userRole = parseInt(localStorage.getItem('userRole'));
+    if (!token) {
+      // Clear all cookies when user is not authenticated
+      document.cookie.split(';').forEach(cookie => {
+        const [name] = cookie.split('=');
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      });
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (userRole !== 2) {
+      navigate('/', { replace: true });
+      return;
+    }
+    setChecking(false);
+    if (onCheck) onCheck();
+  }, [navigate, onCheck]);
+
+  if (checking) {
+    return <LoadingSpinner />;
   }
-  
-  if (userRole !== 2) {
-    return <Navigate to="/" replace />;
-  }
-  
   return null;
 };
 
 // Main Adaptor Component
 const Adaptor = () => {
+  const [authChecked, setAuthChecked] = useState(false);
   return (
     <div className={styles.container}>
-      <AuthCheck />
-      <Navigation />
-      <div className={styles.content}>
-        <AdopterNavigation />
-        <div className={styles.mainContent}>
-        <Routes>
-            <Route index element={<HomeView />} />
-            <Route path="pets" element={<PetsView />} />
-            <Route path="shelters" element={<SheltersView />} />
-            <Route path="pet/:id" element={<PetDetails />} />
-            <Route path="adopt/:id" element={<AdoptionForm />} />
-            <Route path="shelter/:id" element={<ShelterDetails />} />
-            <Route path="*" element={<Navigate to="/adopter" replace />} />
-        </Routes>
-        </div>
-      </div>
+      <AuthCheck onCheck={() => setAuthChecked(true)} />
+      {authChecked && (
+        <>
+          <Navigation />
+          <div className={styles.content}>
+            <AdopterNavigation />
+            <div className={styles.mainContent}>
+              <Routes>
+                <Route index element={<HomeView />} />
+                <Route path="pets" element={<PetsView />} />
+                <Route path="shelters" element={<SheltersView />} />
+                <Route path="pet/:id" element={<PetDetails />} />
+                <Route path="adopt/:id" element={<AdoptionForm />} />
+                <Route path="shelter/:id" element={<ShelterDetails />} />
+                <Route path="*" element={<Navigate to="/adopter" replace />} />
+              </Routes>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

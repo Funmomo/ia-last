@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../Styles/Login.module.css";
 import { login } from "../services/api";
+import { validateRole } from '../utils/auth';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,41 +18,6 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
-  };
-
-  const validateRole = (roleValue) => {
-    console.log('=== Role Validation ===');
-    console.log('Input role value:', roleValue);
-    console.log('Input role type:', typeof roleValue);
-
-    // Handle string roles
-    if (typeof roleValue === 'string') {
-      // Convert "Admin" to 0
-      if (roleValue.toLowerCase() === 'admin') {
-        console.log('Converting "Admin" string to role 0');
-        return 0;
-      }
-      // Convert "Staff" to 1
-      if (roleValue.toLowerCase() === 'staff') {
-        return 1;
-      }
-      // Try converting to number if it's a numeric string
-      const numericRole = Number(roleValue);
-      if (!isNaN(numericRole)) {
-        return validateRole(numericRole);
-      }
-    }
-
-    // Handle numeric roles
-    if (typeof roleValue === 'number' && !isNaN(roleValue)) {
-      if (roleValue === 0 || roleValue === 1 || roleValue === 2) {
-        return roleValue;
-      }
-    }
-
-    // Default to adopter (2) for any invalid values
-    console.warn('Invalid role value, defaulting to 2');
-    return 2;
   };
 
   const handleSubmit = async (e) => {
@@ -73,12 +39,24 @@ const Login = () => {
       localStorage.setItem('token', response.token);
       localStorage.setItem('isAuthenticated', 'true');
 
+      // Store user data
+      if (response.userId) {
+        console.log('Storing user ID from response:', response.userId);
+        localStorage.setItem('userId', response.userId);
+      }
+      if (response.username) localStorage.setItem('username', response.username);
+      if (response.email) localStorage.setItem('userEmail', response.email);
+
       // Extract and validate role
       console.log('=== Role Processing ===');
       console.log('Raw role from response:', response.role);
       
       const validatedRole = validateRole(response.role);
-      console.log('Validated role:', validatedRole);
+      if (validatedRole === null) {
+        console.error('Unrecognized role from backend:', response.role);
+        setError('Unrecognized user role. Please contact support.');
+        return;
+      }
       
       // Store the validated role
       localStorage.setItem('userRole', validatedRole.toString());
@@ -88,11 +66,6 @@ const Login = () => {
       console.log('=== Storage Verification ===');
       console.log('Stored role:', storedRole);
       console.log('Parsed stored role:', Number(storedRole));
-
-      // Store user data
-      if (response.userId) localStorage.setItem('userId', response.userId);
-      if (response.username) localStorage.setItem('username', response.username);
-      if (response.email) localStorage.setItem('userEmail', response.email);
 
       // Navigation
       console.log('=== Navigation ===');
@@ -106,8 +79,12 @@ const Login = () => {
         case 1:
           targetPath = '/staff';
           break;
-        default:
+        case 2:
           targetPath = '/adopter';
+          break;
+        default:
+          setError('Unrecognized user role. Please contact support.');
+          return;
       }
 
       console.log('Navigating to:', targetPath);

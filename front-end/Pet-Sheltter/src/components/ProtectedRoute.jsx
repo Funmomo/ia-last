@@ -1,39 +1,5 @@
 import { Navigate } from "react-router-dom";
-
-const validateRole = (roleValue) => {
-  console.log('=== Route Role Validation ===');
-  console.log('Raw role value:', roleValue);
-  console.log('Role type:', typeof roleValue);
-
-  // Handle string roles
-  if (typeof roleValue === 'string') {
-    // Convert "Admin" to 0
-    if (roleValue.toLowerCase() === 'admin') {
-      console.log('Converting "Admin" string to role 0');
-      return 0;
-    }
-    // Convert "Staff" to 1
-    if (roleValue.toLowerCase() === 'staff') {
-      return 1;
-    }
-    // Try converting to number if it's a numeric string
-    const numericRole = Number(roleValue);
-    if (!isNaN(numericRole)) {
-      return validateRole(numericRole);
-    }
-  }
-
-  // Handle numeric roles
-  if (typeof roleValue === 'number' && !isNaN(roleValue)) {
-    if (roleValue === 0 || roleValue === 1 || roleValue === 2) {
-      return roleValue;
-    }
-  }
-
-  // Default to adopter (2) for any invalid values
-  console.warn('Invalid role value, defaulting to 2');
-  return 2;
-};
+import { validateRole } from '../utils/auth';
 
 // Helper function to convert role number to route path
 const getRoleRoute = (role) => {
@@ -42,8 +8,10 @@ const getRoleRoute = (role) => {
       return "/admin";
     case 1:
       return "/staff";
-    default:
+    case 2:
       return "/adopter";
+    default:
+      return "/";
   }
 };
 
@@ -58,6 +26,10 @@ export const PrivateRoute = ({ children, allowedRoles }) => {
   
   // Validate the role
   const userRole = validateRole(rawRole);
+  if (userRole === null) {
+    console.error('Unrecognized user role in ProtectedRoute:', rawRole);
+    return <div style={{color: 'red', padding: '2rem'}}>Unrecognized user role. Please contact support.</div>;
+  }
   console.log('Validated user role:', userRole);
   console.log('Allowed roles:', allowedRoles);
   console.log('Is role allowed:', allowedRoles.includes(userRole));
@@ -86,8 +58,10 @@ export const PublicOnlyRoute = ({ children }) => {
   
   if (token) {
     const userRole = validateRole(rawRole);
-    console.log('Validated user role:', userRole);
-    
+    if (userRole === null) {
+      console.error('Unrecognized user role in PublicOnlyRoute:', rawRole);
+      return <div style={{color: 'red', padding: '2rem'}}>Unrecognized user role. Please contact support.</div>;
+    }
     const redirectPath = getRoleRoute(userRole);
     console.log('User authenticated, redirecting to:', redirectPath);
     return <Navigate to={redirectPath} replace />;

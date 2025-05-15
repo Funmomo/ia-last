@@ -116,10 +116,15 @@ export const login = async (credentials) => {
     localStorage.setItem('token', token);
     localStorage.setItem('isAuthenticated', 'true');
 
-    // Store user info if available
-    if (decodedToken.nameid || decodedToken.sub) {
-      localStorage.setItem('userId', decodedToken.nameid || decodedToken.sub);
+    // Store user info from claims
+    const userId = decodedToken.nameid || decodedToken.sub;
+    if (userId) {
+      console.log('Storing user ID:', userId);
+      localStorage.setItem('userId', userId);
+    } else {
+      console.warn('No user ID found in token claims');
     }
+
     if (decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']) {
       localStorage.setItem('username', decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']);
     }

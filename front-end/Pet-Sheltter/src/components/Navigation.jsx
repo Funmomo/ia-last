@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styles from '../Styles/Navigation.module.css';
+import SupportIssueButton from './SupportIssueButton';
 
 const Navigation = () => {
   const navigate = useNavigate();
@@ -27,6 +28,12 @@ const Navigation = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
     
+    // Clear all cookies
+    document.cookie.split(';').forEach(cookie => {
+      const [name] = cookie.split('=');
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    });
+    
     // Navigate to login page
     navigate('/login');
   };
@@ -39,15 +46,10 @@ const Navigation = () => {
       <div className={styles.navLinks}>
         {userRole === 2 ? (
           <>
-            <Link to="/adopter" className={styles.navLink}>
-              Available Pets
-            </Link>
             <Link to="/adopter/applications" className={styles.navLink}>
               My Applications
             </Link>
-            <Link to="/messages" className={styles.navLink}>
-              Messages
-            </Link>
+            <SupportIssueButton />
           </>
         ) : (
           <>

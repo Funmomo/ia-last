@@ -9,6 +9,7 @@ import ManageShelters from '../components/admin/ManageShelters';
 import PendingShelters from '../components/admin/PendingShelters';
 import ManageCategories from '../components/admin/ManageCategories';
 import AdoptionRequests from '../components/admin/AdoptionRequests';
+import SupportIssues from '../components/admin/SupportIssues';
 import Dashboard from '../components/admin/Dashboard';
 
 const SheltersManagement = () => {
@@ -100,6 +101,11 @@ const Admin = () => {
     // Clear user data and token
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Clear all cookies
+    document.cookie.split(';').forEach(cookie => {
+      const [name] = cookie.split('=');
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    });
     // Redirect to login page
     navigate('/login');
   };
@@ -162,6 +168,14 @@ const Admin = () => {
             <i className={styles['nav-icon'] + ' ' + styles['adoptions-icon']}></i>
             Adoption Requests
           </Link>
+          <Link 
+            to="/admin/support" 
+            className={`${styles['nav-item']} ${activeTab === 'support' ? styles['active'] : ''}`}
+            onClick={() => setActiveTab('support')}
+          >
+            <i className={styles['nav-icon'] + ' ' + styles['support-icon']}></i>
+            Support Issues
+          </Link>
         </nav>
         
         <div className={styles['admin-footer']}>
@@ -182,6 +196,7 @@ const Admin = () => {
           <Route path="shelters" element={<SheltersManagement />} />
           <Route path="categories" element={<ManageCategories />} />
           <Route path="adoptions" element={<AdoptionRequests />} />
+          <Route path="support" element={<SupportIssues />} />
         </Routes>
       </main>
     </div>
