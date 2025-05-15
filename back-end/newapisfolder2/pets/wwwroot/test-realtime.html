@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Real-time Chat Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .chat-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 10px;
+        }
+        
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            background: #f0f0f0;
+        }
+        
+        .status {
+            color: #666;
+            font-style: italic;
+        }
+        
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Real-time Chat Test</h2>
+
+        <div class="input-group">
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" value="1" title="Your user ID" />
+            <button onclick="connect()">Connect</button>
+        </div>
+
+        <div class="input-group">
+            <label for="toUserId">To User ID:</label>
+            <input type="text" id="toUserId" value="2" title="Recipient's user ID" />
+            <input type="text" id="message" placeholder="Type your message..." title="Message to send" />
+            <button onclick="sendPrivateMessage()">Send Private Message</button>
+        </div>
+
+        <div class="input-group">
+            <label for="groupName">Group Name:</label>
+            <input type="text" id="groupName" value="test-group" title="Name of the group to join" />
+            <button onclick="joinGroup()">Join Group</button>
+            <input type="text" id="groupMessage" placeholder="Type group message..." title="Message to send to group" />
+            <button onclick="sendGroupMessage()">Send Group Message</button>
+        </div>
+
+        <div class="chat-box" id="chatBox"></div>
+        <div class="status" id="status">Not connected</div>
+    </div>
+
+    <script>
+        let connection = null;
+
+        function connect() {
+            const userId = document.getElementById('userId').value;
+
+            // Create connection with transport fallback
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/chatHub", {
+                    transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
+                    skipNegotiation: false,
+                    accessTokenFactory: () => "test-token" // For testing purposes
+                })
+                .withAutomaticReconnect([0, 2000, 5000, 10000, 20000]) // Retry intervals
+                .configureLogging(signalR.LogLevel.Debug)
+                .build();
+
+            // Handle connection events
+            connection.onreconnecting(error => {
+                updateStatus("Reconnecting...", true);
+                console.log("Reconnecting:", error);
+            });
+
+            connection.onreconnected(connectionId => {
+                updateStatus("Reconnected", false);
+                console.log("Reconnected with ID:", connectionId);
+            });
+
+            connection.onclose(error => {
+                updateStatus("Connection closed", true);
+                console.log("Connection closed:", error);
+            });
+
+            // Set up message handlers
+            connection.on("ReceivePrivateMessage", (fromUser, message) => {
+                addMessage(`Private from ${fromUser}: ${message}`);
+            });
+
+            connection.on("ReceiveGroupMessage", (user, message) => {
+                addMessage(`Group from ${user}: ${message}`);
+            });
+
+            // Start the connection
+            connection.start()
+                .then(() => {
+                    updateStatus("Connected to chat hub", false);
+                    addMessage("Connected to chat hub");
+                })
+                .catch(err => {
+                    updateStatus("Connection failed: " + err, true);
+                    console.error("Connection failed:", err);
+                });
+        }
+
+        async function sendPrivateMessage() {
+            if (!connection) {
+                updateStatus("Not connected", true);
+                return;
+            }
+
+            const toUserId = document.getElementById('toUserId').value;
+            const message = document.getElementById('message').value;
+
+            try {
+                await connection.invoke("SendPrivateMessage", toUserId, message);
+                addMessage(`Sent to ${toUserId}: ${message}`);
+                document.getElementById('message').value = '';
+            } catch (err) {
+                updateStatus("Error sending message: " + err, true);
+                console.error("Error sending message:", err);
+            }
+        }
+
+        async function joinGroup() {
+            if (!connection) {
+                updateStatus("Not connected", true);
+                return;
+            }
+
+            const groupName = document.getElementById('groupName').value;
+
+            try {
+                await connection.invoke("JoinGroup", groupName);
+                addMessage(`Joined group: ${groupName}`);
+            } catch (err) {
+                updateStatus("Error joining group: " + err, true);
+                console.error("Error joining group:", err);
+            }
+        }
+
+        async function sendGroupMessage() {
+            if (!connection) {
+                updateStatus("Not connected", true);
+                return;
+            }
+
+            const groupName = document.getElementById('groupName').value;
+            const message = document.getElementById('groupMessage').value;
+
+            try {
+                await connection.invoke("SendMessageToGroup", groupName, message);
+                addMessage(`Sent to group ${groupName}: ${message}`);
+                document.getElementById('groupMessage').value = '';
+            } catch (err) {
+                updateStatus("Error sending group message: " + err, true);
+                console.error("Error sending group message:", err);
+            }
+        }
+
+        function addMessage(message) {
+            const chatBox = document.getElementById('chatBox');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.textContent = message;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function updateStatus(status, isError = false) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = status;
+            statusElement.className = isError ? 'status error' : 'status';
+        }
+    </script>
+</body>
+
+</html>

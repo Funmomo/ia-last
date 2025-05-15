@@ -1,0 +1,110 @@
+CREATE TABLE Users (
+    UserID INT IDENTITY(1,1) PRIMARY KEY,
+    Role INT NOT NULL,
+    Username NVARCHAR(255) NOT NULL,
+    Email NVARCHAR(255) NOT NULL UNIQUE,
+    Password NVARCHAR(255) NOT NULL,
+    FirstName NVARCHAR(255) NOT NULL,
+    LastName NVARCHAR(255) NOT NULL,
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+    Status NVARCHAR(50),
+    ConnectionId NVARCHAR(255)
+);
+
+CREATE TABLE Shelters (
+    ShelterID INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(255) NOT NULL,
+    Address NVARCHAR(255),
+    Phone NVARCHAR(50),
+    Email NVARCHAR(255) UNIQUE,
+    Status INT NOT NULL,
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+    UpdatedAt DATETIME2 DEFAULT GETDATE()
+);
+
+CREATE TABLE PetCategories (
+    CategoryID INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE Pets (
+    PetID INT IDENTITY(1,1) PRIMARY KEY,
+    ShelterID INT,
+    CategoryID INT,
+    Name NVARCHAR(255) NOT NULL,
+    Age INT,
+    Breed NVARCHAR(255),
+    MedicalHistory NVARCHAR(MAX),
+    Description NVARCHAR(500),
+    Status INT NOT NULL,
+    ImageUrl NVARCHAR(1000),
+    AddedAt DATETIME2 DEFAULT GETDATE(),
+    UpdatedAt DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (ShelterID) REFERENCES Shelters(ShelterID) ON DELETE CASCADE,
+    FOREIGN KEY (CategoryID) REFERENCES PetCategories(CategoryID) ON DELETE SET NULL
+);
+
+CREATE TABLE AdoptionRequests (
+    RequestID INT IDENTITY(1,1) PRIMARY KEY,
+    PetID INT NOT NULL,
+    AdopterID INT NOT NULL,
+    ShelterID INT NOT NULL,
+    Status INT NOT NULL,
+    RequestDate DATETIME2 DEFAULT GETDATE(),
+    UpdatedAt DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (PetID) REFERENCES Pets(PetID) ON DELETE CASCADE,
+    FOREIGN KEY (AdopterID) REFERENCES Users(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (ShelterID) REFERENCES Shelters(ShelterID) ON DELETE NO ACTION
+);
+
+CREATE TABLE Communications (
+    MessageID INT IDENTITY(1,1) PRIMARY KEY,
+    AdoptionRequestID INT NOT NULL,
+    SenderID INT NOT NULL,
+    ReceiverID INT NOT NULL,
+    SentAt DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (AdoptionRequestID) REFERENCES AdoptionRequests(RequestID) ON DELETE CASCADE,
+    FOREIGN KEY (SenderID) REFERENCES Users(UserID) ON DELETE NO ACTION,
+    FOREIGN KEY (ReceiverID) REFERENCES Users(UserID) ON DELETE NO ACTION
+);
+
+CREATE TABLE InterviewSchedules (
+    InterviewID INT IDENTITY(1,1) PRIMARY KEY,
+    AdoptionRequestID INT NOT NULL,
+    InterviewDate DATETIME2 NOT NULL,
+    Status INT NOT NULL,
+    Notes NVARCHAR(1000),
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+    UpdatedAt DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (AdoptionRequestID) REFERENCES AdoptionRequests(RequestID) ON DELETE CASCADE
+);
+
+CREATE TABLE Messages (
+    MessageID INT IDENTITY(1,1) PRIMARY KEY,
+    FSenderID INT NOT NULL,
+    ReceiverID INT NOT NULL,
+    Content NVARCHAR(MAX) NOT NULL,
+    SentAt DATETIME2 NOT NULL,
+    IsDelivered BIT NOT NULL,
+    DeliveredAt DATETIME2,
+    ConversationID INT NOT NULL,
+    FOREIGN KEY (FSenderID) REFERENCES Users(UserID) ON DELETE NO ACTION,
+    FOREIGN KEY (ReceiverID) REFERENCES Users(UserID) ON DELETE NO ACTION
+);
+
+CREATE TABLE SupportIssue (
+    IssueID INT IDENTITY(1,1) PRIMARY KEY,
+    ReportID INT NULL,
+    Title NVARCHAR(255),
+    Description NVARCHAR(1000),
+    Status NVARCHAR(50) NOT NULL CHECK (Status IN ('open', 'in progress', 'closed')),
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+    UpdatedAt DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (ReportID) REFERENCES Users(UserID) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_Users_Email ON Users(Email);
+CREATE INDEX idx_Pets_ShelterID ON Pets(ShelterID);
+CREATE INDEX idx_Pets_CategoryID ON Pets(CategoryID);
+CREATE INDEX idx_AdoptionRequests_AdopterID ON AdoptionRequests(AdopterID);
+CREATE INDEX idx_Messages_ConversationID ON Messages(ConversationID); 

@@ -1,0 +1,255 @@
+.chat-container {
+    display: flex;
+    height: calc(100vh - 64px);
+    /* Adjust based on your header height */
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
+}
+
+.conversations-list {
+    width: 300px;
+    background-color: white;
+    border-right: 1px solid #e0e0e0;
+    overflow-y: auto;
+}
+
+.conversations-list h2 {
+    padding: 20px;
+    margin: 0;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.conversation-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.conversation-item:hover {
+    background-color: #f8f8f8;
+}
+
+.conversation-item.active {
+    background-color: #e3f2fd;
+}
+
+.conversation-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.conversation-info .username {
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.conversation-info .last-message {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+}
+
+.chat-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: white;
+}
+
+.chat-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.messages-container {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message {
+    max-width: 70%;
+    margin: 5px 0;
+}
+
+.message.sent {
+    align-self: flex-end;
+}
+
+.message.received {
+    align-self: flex-start;
+}
+
+.message-content {
+    padding: 10px 15px;
+    border-radius: 15px;
+    position: relative;
+    word-wrap: break-word;
+}
+
+.message.sent .message-content {
+    background-color: #0084ff;
+    color: white;
+}
+
+.message.received .message-content {
+    background-color: #e9ecef;
+    color: #333;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    margin-left: 8px;
+    opacity: 0.7;
+}
+
+.delivery-status {
+    font-size: 0.75rem;
+    margin-left: 5px;
+}
+
+.message-input {
+    padding: 20px;
+    background-color: white;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    gap: 10px;
+}
+
+.message-input input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
+    outline: none;
+    font-size: 1rem;
+}
+
+.message-input input:focus {
+    border-color: #0084ff;
+}
+
+.message-input button {
+    padding: 10px 20px;
+    background-color: #0084ff;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.message-input button:hover {
+    background-color: #0073e6;
+}
+
+.no-conversation {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.conversations-header {
+    padding: 20px;
+    margin: 0;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.conversations-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.new-conversation-button {
+    padding: 8px 15px;
+    background-color: #0084ff;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.new-conversation-button:hover {
+    background-color: #0073e6;
+}
+
+
+/* Scrollbar Styling */
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.9rem;
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+}
+
+.toast.error {
+    background-color: #dc3545;
+}
+
+.toast.info {
+    background-color: #17a2b8;
+}
+
+.toast.success {
+    background-color: #28a745;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
